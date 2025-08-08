@@ -17,6 +17,10 @@ operator-sdk create api --group dac --version v1alpha1 --kind DataAgentContainer
 
 # build
 
+amd64:
+
+export GOOS=linux
+export GOARCH=amd64
 make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
 
 
