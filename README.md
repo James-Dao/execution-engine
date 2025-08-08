@@ -34,12 +34,7 @@ docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
 
 
-
-
 make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/amd64
-
-make docker-buildx docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/amd64
-
 
 
 arm64:
@@ -52,9 +47,6 @@ docker-build: ## Build docker image with the manager.
 
 
 make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/arm64
-
-make docker-buildx docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64" BUILDPLATFORM=linux/arm64
-
 
 
 
