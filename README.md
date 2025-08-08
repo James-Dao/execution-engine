@@ -16,6 +16,9 @@ operator-sdk create api --group dac --version v1alpha1 --kind DataAgentContainer
 
 # 本地测试：
 
+export GOOS=darwin
+export GOARCH=arm64
+
 make run
 
 
