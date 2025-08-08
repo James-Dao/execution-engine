@@ -12,20 +12,15 @@ operator-sdk create api --group dac --version v1alpha1 --kind DataDescriptor --r
 
 operator-sdk create api --group dac --version v1alpha1 --kind DataAgentContainer --resource --controller
 
-
-
 # 本地测试：
 
 export GOOS=darwin
 export GOARCH=arm64
-
 make run
-
-
 
 # build
 
-amd64:
+## amd64:
 
 修改 makefile,增加 --platform linux/amd64
 
@@ -33,11 +28,9 @@ amd64:
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
 
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.2-amd64" BUILDPLATFORM=linux/amd64
 
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/amd64
-
-
-arm64:
+## arm64:
 
 修改 makefile,增加 --platform linux/amd64
 
@@ -45,10 +38,7 @@ arm64:
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
 
-
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/arm64
-
-
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.2-amd64" BUILDPLATFORM=linux/arm64
 
 # deploy
 
@@ -58,12 +48,9 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 
 ~/.kube/config
 
-
-
-
 ## 下发 controller 到 k8s的execution-engine-system namespace下
 
-make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64"
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.2-amd64"
 
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.2-arm64"
 
-make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64"
