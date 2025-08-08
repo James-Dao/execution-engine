@@ -19,12 +19,17 @@ package controller
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
+)
+
+var (
+	dacLog = logf.Log.WithName("controller_DataDescriptor")
 )
 
 // DataAgentContainerReconciler reconciles a DataAgentContainer object
@@ -50,6 +55,21 @@ func (r *DataAgentContainerReconciler) Reconcile(ctx context.Context, req ctrl.R
 	_ = logf.FromContext(ctx)
 
 	// TODO(user): your logic here
+
+	reqLogger := ddLog.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name, "type", "DataAgentContainer")
+	reqLogger.Info("Reconciling DataAgentContainer")
+
+	// Fetch the DataAgentContainer instance
+	instance := &dacv1alpha1.DataAgentContainer{}
+	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("DataAgentContainer delete")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
