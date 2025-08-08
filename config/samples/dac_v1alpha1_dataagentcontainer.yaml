@@ -1,0 +1,9 @@
+apiVersion: dac.dac.io/v1alpha1
+kind: DataAgentContainer
+metadata:
+  labels:
+    app.kubernetes.io/name: execution-engine
+    app.kubernetes.io/managed-by: kustomize
+  name: dataagentcontainer-sample
+spec:
+  # TODO(user): Add fields here
