@@ -32,5 +32,6 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 
 
 
-## 下发 controller 到 k8s
+## 下发 controller 到 k8s的execution-engine-system namespace下
+
 make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
