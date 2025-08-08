@@ -21,7 +21,16 @@ amd64:
 
 export GOOS=linux
 export GOARCH=amd64
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64"
+
+
+
+arm64:
+
+export GOOS=linux
+export GOARCH=arm64
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64"
+
 
 
 
@@ -38,4 +47,7 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 
 ## 下发 controller 到 k8s的execution-engine-system namespace下
 
-make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64"
+
+
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64"
