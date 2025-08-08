@@ -19,3 +19,14 @@ operator-sdk create api --group dac --version v1alpha1 --kind DataAgentContainer
 
 make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
 
+
+
+# deploy
+
+## 配置kubeconfig
+
+
+
+
+## 下发 controller 到 k8s
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1"
