@@ -26,6 +26,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/James-Dao/execution-engine/client/k8s"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -201,6 +202,11 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	// Create kubernetes service.
+	k8sService := k8s.New(mgr.GetClient(), mgr.GetLogger().WithName("controller_k8s"))
+
+	print(k8sService)
 
 	if err := (&controller.DataDescriptorReconciler{
 		Client: mgr.GetClient(),
