@@ -27,17 +27,33 @@ make run
 
 amd64:
 
-export GOOS=linux
-export GOARCH=amd64
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64"
+修改 makefile,增加 --platform linux/amd64
+
+.PHONY: docker-build 
+docker-build: ## Build docker image with the manager.
+	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
+
+
+
+
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/amd64
+
+make docker-buildx docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/amd64
 
 
 
 arm64:
 
-export GOOS=linux
-export GOARCH=arm64
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64"
+修改 makefile,增加 --platform linux/amd64
+
+.PHONY: docker-build 
+docker-build: ## Build docker image with the manager.
+	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
+
+
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-amd64" BUILDPLATFORM=linux/arm64
+
+make docker-buildx docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.1-arm64" BUILDPLATFORM=linux/arm64
 
 
 
