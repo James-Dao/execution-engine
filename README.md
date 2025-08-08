@@ -25,6 +25,10 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 
 ## 配置kubeconfig
 
+将kubeconfig文件拿到之后，放到当前用户的.kube文件夹下，命名成config
+
+~/.kube/config
+
 
 
 
