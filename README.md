@@ -14,6 +14,11 @@ operator-sdk create api --group dac --version v1alpha1 --kind DataAgentContainer
 
 
 
+# 本地测试：
+
+make run
+
+
 
 # build
 
