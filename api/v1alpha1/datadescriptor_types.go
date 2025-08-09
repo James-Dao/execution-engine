@@ -84,13 +84,6 @@ type SourceStatus struct {
 	Records      int64       `json:"records,omitempty"`
 }
 
-// Condition defines a condition for the DataDescriptor
-type Condition struct {
-	Type   string `json:"type"`
-	Status string `json:"status"`
-	Reason string `json:"reason,omitempty"`
-}
-
 // DataDescriptorSpec defines the desired state of DataDescriptor.
 type DataDescriptorSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

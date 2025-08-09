@@ -23,21 +23,102 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// DataAgentContainerSpec defines the desired state of DataAgentContainer.
-type DataAgentContainerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// DataPolicy defines how data sources should be selected
+type DataPolicy struct {
+	// Selector for data sources by name
+	SourceNameSelector []string `json:"sourceNameSelector,omitempty"`
 
-	// Foo is an example field of DataAgentContainer. Edit dataagentcontainer_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Selector for data sources by classification
+	MatchClassifications []ClassificationMatch `json:"matchClassifications,omitempty"`
 }
 
-// DataAgentContainerStatus defines the observed state of DataAgentContainer.
-type DataAgentContainerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// ClassificationMatch defines how to match data sources by their classification
+type ClassificationMatch struct {
+	// Domain of the data
+	Domain string `json:"domain,omitempty"`
 
-	Conditions []Condition `json:"conditions,omitempty"`
+	// Category of the data (can be string or array of strings)
+	Category []string `json:"category,omitempty"`
+
+	// Subcategory of the data
+	Subcategory string `json:"subcategory,omitempty"`
+
+	// Matching policy (exact/prefix/regex)
+	MatchPolicy string `json:"matchPolicy,omitempty"`
+}
+
+// AgentCard defines the agent's metadata and capabilities
+type AgentCard struct {
+	Name               string            `json:"name"`
+	Description        string            `json:"description"`
+	URL                string            `json:"url"`
+	Provider           *string           `json:"provider,omitempty"`
+	Version            string            `json:"version"`
+	DocumentationURL   *string           `json:"documentationUrl,omitempty"`
+	Capabilities       AgentCapabilities `json:"capabilities"`
+	Authentication     AgentAuth         `json:"authentication"`
+	DefaultInputModes  []string          `json:"defaultInputModes"`
+	DefaultOutputModes []string          `json:"defaultOutputModes"`
+	Skills             []AgentSkill      `json:"skills"`
+}
+
+// AgentCapabilities defines what capabilities the agent supports
+type AgentCapabilities struct {
+	Streaming              string `json:"streaming"`
+	PushNotifications      string `json:"pushNotifications"`
+	StateTransitionHistory string `json:"stateTransitionHistory"`
+}
+
+// AgentAuth defines authentication schemes for the agent
+type AgentAuth struct {
+	Credentials *string  `json:"credentials,omitempty"`
+	Schemes     []string `json:"schemes"`
+}
+
+// AgentSkill defines a specific skill the agent provides
+type AgentSkill struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Tags        []string  `json:"tags,omitempty"`
+	Examples    []string  `json:"examples,omitempty"`
+	InputModes  *[]string `json:"inputModes,omitempty"`
+	OutputModes *[]string `json:"outputModes,omitempty"`
+}
+
+// ModelSpec defines the LLM and embedding models to use
+type ModelSpec struct {
+	Provider  string `json:"provider"`
+	LLM       string `json:"llm"`
+	Embedding string `json:"embedding"`
+}
+
+// DataAgentContainerSpec defines the desired state of DataAgentContainer
+type DataAgentContainerSpec struct {
+	DataPolicy DataPolicy `json:"dataPolicy"`
+	AgentCard  AgentCard  `json:"agentCard"`
+	Model      ModelSpec  `json:"model"`
+}
+
+// ActiveDataDescriptor tracks which data descriptors are being used
+type ActiveDataDescriptor struct {
+	Name       string `json:"name"`
+	Namespace  string `json:"namespace"`
+	LastSynced string `json:"lastSynced"`
+}
+
+// Endpoint defines how to connect to the agent
+type Endpoint struct {
+	Address  string `json:"address"`
+	Port     int32  `json:"port"`
+	Protocol string `json:"protocol"`
+}
+
+// DataAgentContainerStatus defines the observed state of DataAgentContainer
+type DataAgentContainerStatus struct {
+	ActiveDataDescriptors []ActiveDataDescriptor `json:"activeDataDescriptors,omitempty"`
+	Endpoint              Endpoint               `json:"endpoint,omitempty"`
+	Conditions            []Condition            `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

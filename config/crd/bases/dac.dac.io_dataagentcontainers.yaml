@@ -38,31 +38,217 @@ spec:
           metadata:
             type: object
           spec:
-            description: DataAgentContainerSpec defines the desired state of DataAgentContainer.
+            description: DataAgentContainerSpec defines the desired state of DataAgentContainer
             properties:
-              foo:
-                description: Foo is an example field of DataAgentContainer. Edit dataagentcontainer_types.go
-                  to remove/update
-                type: string
+              agentCard:
+                description: AgentCard defines the agent's metadata and capabilities
+                properties:
+                  authentication:
+                    description: AgentAuth defines authentication schemes for the
+                      agent
+                    properties:
+                      credentials:
+                        type: string
+                      schemes:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - schemes
+                    type: object
+                  capabilities:
+                    description: AgentCapabilities defines what capabilities the agent
+                      supports
+                    properties:
+                      pushNotifications:
+                        type: string
+                      stateTransitionHistory:
+                        type: string
+                      streaming:
+                        type: string
+                    required:
+                    - pushNotifications
+                    - stateTransitionHistory
+                    - streaming
+                    type: object
+                  defaultInputModes:
+                    items:
+                      type: string
+                    type: array
+                  defaultOutputModes:
+                    items:
+                      type: string
+                    type: array
+                  description:
+                    type: string
+                  documentationUrl:
+                    type: string
+                  name:
+                    type: string
+                  provider:
+                    type: string
+                  skills:
+                    items:
+                      description: AgentSkill defines a specific skill the agent provides
+                      properties:
+                        description:
+                          type: string
+                        examples:
+                          items:
+                            type: string
+                          type: array
+                        id:
+                          type: string
+                        inputModes:
+                          items:
+                            type: string
+                          type: array
+                        name:
+                          type: string
+                        outputModes:
+                          items:
+                            type: string
+                          type: array
+                        tags:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - description
+                      - id
+                      - name
+                      type: object
+                    type: array
+                  url:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - authentication
+                - capabilities
+                - defaultInputModes
+                - defaultOutputModes
+                - description
+                - name
+                - skills
+                - url
+                - version
+                type: object
+              dataPolicy:
+                description: DataPolicy defines how data sources should be selected
+                properties:
+                  matchClassifications:
+                    description: Selector for data sources by classification
+                    items:
+                      description: ClassificationMatch defines how to match data sources
+                        by their classification
+                      properties:
+                        category:
+                          description: Category of the data (can be string or array
+                            of strings)
+                          items:
+                            type: string
+                          type: array
+                        domain:
+                          description: Domain of the data
+                          type: string
+                        matchPolicy:
+                          description: Matching policy (exact/prefix/regex)
+                          type: string
+                        subcategory:
+                          description: Subcategory of the data
+                          type: string
+                      type: object
+                    type: array
+                  sourceNameSelector:
+                    description: Selector for data sources by name
+                    items:
+                      type: string
+                    type: array
+                type: object
+              model:
+                description: ModelSpec defines the LLM and embedding models to use
+                properties:
+                  embedding:
+                    type: string
+                  llm:
+                    type: string
+                  provider:
+                    type: string
+                required:
+                - embedding
+                - llm
+                - provider
+                type: object
+            required:
+            - agentCard
+            - dataPolicy
+            - model
             type: object
           status:
-            description: DataAgentContainerStatus defines the observed state of DataAgentContainer.
+            description: DataAgentContainerStatus defines the observed state of DataAgentContainer
             properties:
+              activeDataDescriptors:
+                items:
+                  description: ActiveDataDescriptor tracks which data descriptors
+                    are being used
+                  properties:
+                    lastSynced:
+                      type: string
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  required:
+                  - lastSynced
+                  - name
+                  - namespace
+                  type: object
+                type: array
               conditions:
                 items:
-                  description: Condition defines a condition for the DataDescriptor
+                  description: Condition saves the state information of the cr
                   properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
                     reason:
+                      description: The reason for the condition's last transition.
                       type: string
                     status:
+                      description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
+                      description: Status of cr condition.
                       type: string
                   required:
                   - status
                   - type
                   type: object
                 type: array
+              endpoint:
+                description: Endpoint defines how to connect to the agent
+                properties:
+                  address:
+                    type: string
+                  port:
+                    format: int32
+                    type: integer
+                  protocol:
+                    type: string
+                required:
+                - address
+                - port
+                - protocol
+                type: object
             type: object
         type: object
     served: true

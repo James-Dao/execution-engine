@@ -136,13 +136,27 @@ spec:
             properties:
               conditions:
                 items:
-                  description: Condition defines a condition for the DataDescriptor
+                  description: Condition saves the state information of the cr
                   properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
                     reason:
+                      description: The reason for the condition's last transition.
                       type: string
                     status:
+                      description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
+                      description: Status of cr condition.
                       type: string
                   required:
                   - status
