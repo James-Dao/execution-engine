@@ -1,6 +1,9 @@
 package v1alpha1
 
 import (
+	"sort"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -32,4 +35,95 @@ type Condition struct {
 	Reason string `json:"reason,omitempty"`
 	// A human readable message indicating details about the transition.
 	Message string `json:"message,omitempty"`
+}
+
+func newCondition(condType ConditionType, status corev1.ConditionStatus, reason, message string) *Condition {
+	now := time.Now()
+	nowString := now.Format(time.RFC3339)
+	return &Condition{
+		Type:               condType,
+		Status:             status,
+		LastUpdateTime:     nowString,
+		LastTransitionTime: nowString,
+		Reason:             reason,
+		Message:            message,
+	}
+}
+
+// DataDescriptor Status
+func (dds *DataDescriptorStatus) DescConditionsByTime() {
+	sort.Slice(dds.Conditions, func(i, j int) bool {
+		//return dds.Conditions[i].LastUpdateAt.After(dds.Conditions[j].LastUpdateAt)
+		return true
+	})
+}
+
+func getDataDescriptorCondition(status *DataDescriptorStatus, t ConditionType) (int, *Condition) {
+	for i, c := range status.Conditions {
+		if t == c.Type {
+			return i, &c
+		}
+	}
+	return -1, nil
+}
+
+func (dds *DataDescriptorStatus) setDataDescriptorCondition(c Condition) {
+	pos, cp := getDataDescriptorCondition(dds, c.Type)
+	if cp != nil &&
+		cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
+		now := time.Now()
+		nowString := now.Format(time.RFC3339)
+		dds.Conditions[pos].LastUpdateTime = nowString
+		return
+	}
+
+	if cp != nil {
+		dds.Conditions[pos] = c
+	} else {
+		dds.Conditions = append(dds.Conditions, c)
+	}
+}
+
+func (dds *DataDescriptorStatus) SetCreateCondition(message string) {
+	c := newCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
+	dds.setDataDescriptorCondition(*c)
+}
+
+// DataAgentContainer Status
+func (dacs *DataAgentContainerStatus) DescConditionsByTime() {
+	sort.Slice(dacs.Conditions, func(i, j int) bool {
+		//return dacs.Conditions[i].LastUpdateAt.After(dacs.Conditions[j].LastUpdateAt)
+		return true
+	})
+}
+
+func getDataAgentContainerCondition(status *DataAgentContainerStatus, t ConditionType) (int, *Condition) {
+	for i, c := range status.Conditions {
+		if t == c.Type {
+			return i, &c
+		}
+	}
+	return -1, nil
+}
+
+func (dacs *DataAgentContainerStatus) setDataAgentContainerCondition(c Condition) {
+	pos, cp := getDataAgentContainerCondition(dacs, c.Type)
+	if cp != nil &&
+		cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
+		now := time.Now()
+		nowString := now.Format(time.RFC3339)
+		dacs.Conditions[pos].LastUpdateTime = nowString
+		return
+	}
+
+	if cp != nil {
+		dacs.Conditions[pos] = c
+	} else {
+		dacs.Conditions = append(dacs.Conditions, c)
+	}
+}
+
+func (dacs *DataAgentContainerStatus) SetCreateCondition(message string) {
+	c := newCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
+	dacs.setDataAgentContainerCondition(*c)
 }
