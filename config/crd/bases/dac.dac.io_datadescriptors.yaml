@@ -39,41 +39,149 @@ spec:
           spec:
             description: DataDescriptorSpec defines the desired state of DataDescriptor.
             properties:
-              foo:
-                description: Foo is an example field of DataDescriptor. Edit datadescriptor_types.go
-                  to remove/update
-                type: string
+              sources:
+                description: |-
+                  INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                items:
+                  description: DataSource defines a data source configuration
+                  properties:
+                    authenticationRef:
+                      description: LocalObjectReference contains enough information
+                        to let you locate the referenced object inside the same namespace.
+                      properties:
+                        name:
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    classification:
+                      items:
+                        description: Classification defines how data is categorized
+                        properties:
+                          category:
+                            type: string
+                          domain:
+                            type: string
+                          subcategory:
+                            type: string
+                          tags:
+                            items:
+                              additionalProperties:
+                                items:
+                                  type: string
+                                type: array
+                              type: object
+                            type: array
+                        required:
+                        - category
+                        - domain
+                        - subcategory
+                        type: object
+                      type: array
+                    extract:
+                      description: ExtractConfig defines extraction configuration
+                        for data sources
+                      properties:
+                        batchSize:
+                          type: integer
+                        compression:
+                          type: string
+                        fileFormat:
+                          type: string
+                        query:
+                          type: string
+                        tables:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    metadata:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    name:
+                      type: string
+                    processing:
+                      description: ProcessingConfig defines data processing rules
+                      properties:
+                        cleaning:
+                          items:
+                            description: CleaningRule defines a single data cleaning
+                              rule
+                            properties:
+                              params:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              rule:
+                                type: string
+                            required:
+                            - rule
+                            type: object
+                          type: array
+                      type: object
+                    type:
+                      description: DataSourceType defines the type of data source
+                      type: string
+                  required:
+                  - authenticationRef
+                  - name
+                  - type
+                  type: object
+                type: array
             type: object
           status:
             description: DataDescriptorStatus defines the observed state of DataDescriptor.
             properties:
               conditions:
                 items:
-                  description: Condition saves the state information of the cr
+                  description: Condition defines a condition for the DataDescriptor
                   properties:
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
-                      type: string
-                    lastUpdateTime:
-                      description: The last time this condition was updated.
-                      type: string
-                    message:
-                      description: A human readable message indicating details about
-                        the transition.
-                      type: string
                     reason:
-                      description: The reason for the condition's last transition.
                       type: string
                     status:
-                      description: Status of the condition, one of True, False, Unknown.
                       type: string
                     type:
-                      description: Status of cr condition.
                       type: string
                   required:
                   - status
                   - type
+                  type: object
+                type: array
+              consumedBy:
+                items:
+                  description: LocalObjectReference contains enough information to
+                    let you locate the referenced object inside the same namespace.
+                  properties:
+                    name:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
+              overallPhase:
+                type: string
+              sourceStatuses:
+                description: |-
+                  INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                items:
+                  description: SourceStatus defines the status of a data source
+                  properties:
+                    lastSyncTime:
+                      format: date-time
+                      type: string
+                    name:
+                      type: string
+                    phase:
+                      type: string
+                    records:
+                      format: int64
+                      type: integer
+                  required:
+                  - name
+                  - phase
                   type: object
                 type: array
             type: object

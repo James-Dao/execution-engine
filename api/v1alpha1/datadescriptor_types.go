@@ -23,21 +23,89 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// DataSourceType defines the type of data source
+type DataSourceType string
+
+const (
+	DataSourceRedis DataSourceType = "redis"
+	DataSourceMySQL DataSourceType = "mysql"
+	DataSourceMinIO DataSourceType = "minio"
+)
+
+// DataSource defines a data source configuration
+type DataSource struct {
+	Type              DataSourceType       `json:"type"`
+	Name              string               `json:"name"`
+	Metadata          map[string]string    `json:"metadata,omitempty"`
+	Extract           *ExtractConfig       `json:"extract,omitempty"`
+	AuthenticationRef LocalObjectReference `json:"authenticationRef"`
+	Processing        ProcessingConfig     `json:"processing,omitempty"`
+	Classification    []Classification     `json:"classification,omitempty"`
+}
+
+// ExtractConfig defines extraction configuration for data sources
+type ExtractConfig struct {
+	Tables      []string `json:"tables,omitempty"`
+	Query       string   `json:"query,omitempty"`
+	BatchSize   int      `json:"batchSize,omitempty"`
+	FileFormat  string   `json:"fileFormat,omitempty"`
+	Compression string   `json:"compression,omitempty"`
+}
+
+// ProcessingConfig defines data processing rules
+type ProcessingConfig struct {
+	Cleaning []CleaningRule `json:"cleaning,omitempty"`
+}
+
+// CleaningRule defines a single data cleaning rule
+type CleaningRule struct {
+	Rule   string            `json:"rule"`
+	Params map[string]string `json:"params,omitempty"`
+}
+
+// Classification defines how data is categorized
+type Classification struct {
+	Domain      string                `json:"domain"`
+	Category    string                `json:"category"`
+	Subcategory string                `json:"subcategory"`
+	Tags        []map[string][]string `json:"tags,omitempty"`
+}
+
+// LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+type LocalObjectReference struct {
+	Name string `json:"name"`
+}
+
+// SourceStatus defines the status of a data source
+type SourceStatus struct {
+	Name         string      `json:"name"`
+	Phase        string      `json:"phase"`
+	LastSyncTime metav1.Time `json:"lastSyncTime,omitempty"`
+	Records      int64       `json:"records,omitempty"`
+}
+
+// Condition defines a condition for the DataDescriptor
+type Condition struct {
+	Type   string `json:"type"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
 // DataDescriptorSpec defines the desired state of DataDescriptor.
 type DataDescriptorSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of DataDescriptor. Edit datadescriptor_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Sources []DataSource `json:"sources,omitempty"`
 }
 
 // DataDescriptorStatus defines the observed state of DataDescriptor.
 type DataDescriptorStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	Conditions []Condition `json:"conditions,omitempty"`
+	SourceStatuses []SourceStatus         `json:"sourceStatuses,omitempty"`
+	ConsumedBy     []LocalObjectReference `json:"consumedBy,omitempty"`
+	OverallPhase   string                 `json:"overallPhase,omitempty"`
+	Conditions     []Condition            `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
