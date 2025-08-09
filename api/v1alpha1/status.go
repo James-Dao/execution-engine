@@ -70,8 +70,7 @@ func getDataDescriptorCondition(status *DataDescriptorStatus, t ConditionType) (
 
 func (dds *DataDescriptorStatus) setDataDescriptorCondition(c Condition) {
 	pos, cp := getDataDescriptorCondition(dds, c.Type)
-	if cp != nil &&
-		cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
+	if cp != nil && cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
 		now := time.Now()
 		nowString := now.Format(time.RFC3339)
 		dds.Conditions[pos].LastUpdateTime = nowString
@@ -110,8 +109,7 @@ func getDataAgentContainerCondition(status *DataAgentContainerStatus, t Conditio
 
 func (dacs *DataAgentContainerStatus) setDataAgentContainerCondition(c Condition) {
 	pos, cp := getDataAgentContainerCondition(dacs, c.Type)
-	if cp != nil &&
-		cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
+	if cp != nil && cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
 		now := time.Now()
 		nowString := now.Format(time.RFC3339)
 		dacs.Conditions[pos].LastUpdateTime = nowString
