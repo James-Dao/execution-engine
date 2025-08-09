@@ -53,8 +53,9 @@ func newCondition(condType ConditionType, status corev1.ConditionStatus, reason,
 // DataDescriptor Status
 func (dds *DataDescriptorStatus) DescConditionsByTime() {
 	sort.Slice(dds.Conditions, func(i, j int) bool {
-		//return dds.Conditions[i].LastUpdateAt.After(dds.Conditions[j].LastUpdateAt)
-		return true
+		t1, _ := time.Parse(time.RFC3339, dds.Conditions[i].LastUpdateTime)
+		t2, _ := time.Parse(time.RFC3339, dds.Conditions[j].LastUpdateTime)
+		return t1.After(t2)
 	})
 }
 
@@ -92,8 +93,9 @@ func (dds *DataDescriptorStatus) SetCreateCondition(message string) {
 // DataAgentContainer Status
 func (dacs *DataAgentContainerStatus) DescConditionsByTime() {
 	sort.Slice(dacs.Conditions, func(i, j int) bool {
-		//return dacs.Conditions[i].LastUpdateAt.After(dacs.Conditions[j].LastUpdateAt)
-		return true
+		t1, _ := time.Parse(time.RFC3339, dacs.Conditions[i].LastUpdateTime)
+		t2, _ := time.Parse(time.RFC3339, dacs.Conditions[j].LastUpdateTime)
+		return t1.After(t2)
 	})
 }
 
