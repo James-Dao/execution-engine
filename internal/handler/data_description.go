@@ -94,6 +94,10 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	if len(aggregatedErrors) > 0 {
 		return fmt.Errorf("encountered %d errors: %v", len(aggregatedErrors), aggregatedErrors)
 	}
+
+	// add code to call celery http server to send task for dd.
+	// todo
+
 	return nil
 }
 
