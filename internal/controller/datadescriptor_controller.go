@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"github.com/James-Dao/execution-engine/internal/handler"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -84,62 +83,6 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	return ctrl.Result{RequeueAfter: requeueAfter}, nil
-}
-
-// Example controller function that updates status
-func (r *DataDescriptorReconciler) updateStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor, sources []dacv1alpha1.SourceStatus) error {
-	// Set creating condition if this is a new resource
-	if dd.Status.OverallPhase == "" {
-		dd.Status.SetCreateCondition("Initializing data descriptor")
-	}
-
-	// Update the source statuses
-	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(sources))
-	copy(sourceStatuses, sources)
-
-	// Update consumedBy if needed (example)
-	consumedBy := []dacv1alpha1.LocalObjectReference{
-		{Name: "example-consumer"},
-	}
-
-	// Calculate overall phase based on source statuses
-	overallPhase := "Ready"
-	for _, status := range sources {
-		if status.Phase != "Ready" {
-			overallPhase = "Degraded"
-			break
-		}
-	}
-
-	// Update the status
-	r.updateDataDescriptorStatus(dd, overallPhase, sourceStatuses, consumedBy)
-
-	// Add additional conditions as needed
-	if overallPhase == "Ready" {
-		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionAvailable, corev1.ConditionTrue, "Available", "All data sources are available")
-		dd.Status.SetDataDescriptorCondition(*c)
-	} else {
-		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionFailed, corev1.ConditionTrue, "Degraded", "Some data sources are not ready")
-		dd.Status.SetDataDescriptorCondition(*c)
-	}
-
-	// Update the status in Kubernetes
-	return r.Status().Update(ctx, dd)
-}
-
-// Example controller function that updates status
-func (r *DataDescriptorReconciler) updateDataDescriptorStatus(dd *dacv1alpha1.DataDescriptor, phase string, sourceStatuses []dacv1alpha1.SourceStatus, consumedBy []dacv1alpha1.LocalObjectReference) {
-	// Update overall phase
-	dd.Status.OverallPhase = phase
-
-	// Update source statuses
-	dd.Status.SourceStatuses = sourceStatuses
-
-	// Update consumedBy references
-	dd.Status.ConsumedBy = consumedBy
-
-	// Sort conditions by time
-	dd.Status.DescConditionsByTime()
 }
 
 // SetupWithManager sets up the controller with the Manager.

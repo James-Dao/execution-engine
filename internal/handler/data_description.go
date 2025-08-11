@@ -7,6 +7,7 @@ import (
 
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -29,75 +30,98 @@ type SourceStatusResult struct {
 	Error        error
 }
 
-// Do ensures the DataDescriptor is in the desired state and updates its status
 func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
-	logger.Info("Start processing DataDescriptor")
+	logger.Info("Processing DataDescriptor")
 
-	// Initialize status fields if needed
+	// 初始化 Status 字段
 	if dd.Status.SourceStatuses == nil {
 		dd.Status.SourceStatuses = make([]dacv1alpha1.SourceStatus, 0)
 	}
+	if dd.Status.Conditions == nil {
+		dd.Status.Conditions = make([]dacv1alpha1.Condition, 0)
+	}
 
-	// Check all data source statuses
+	// 如果是新资源，设置初始化 Condition
+	if dd.Status.OverallPhase == "" {
+		dd.Status.SetCreateCondition("Initializing data descriptor")
+	}
+
+	// 检查数据源状态
 	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(dd.Spec.Sources))
 	allHealthy := true
 	var aggregatedErrors []error
 
 	for i, source := range dd.Spec.Sources {
 		status := h.checkSourceStatus(ctx, source)
-		sourceStatus := dacv1alpha1.SourceStatus{
+		sourceStatuses[i] = dacv1alpha1.SourceStatus{
 			Name:         source.Name,
 			Phase:        status.Phase,
 			LastSyncTime: status.LastSyncTime,
 			Records:      status.Records,
 		}
-		sourceStatuses[i] = sourceStatus
 
-		if status.Error != nil {
-			logger.Error(status.Error, "Data source status check failed", "source", source.Name)
+		if status.Error != nil || status.Phase != "Ready" {
 			allHealthy = false
-			aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s error: %w", source.Name, status.Error))
+			// 1. 记录错误日志
+			if status.Error != nil {
+				logger.Error(
+					status.Error,
+					"Data source status check failed",
+					"source", source.Name,
+					"phase", status.Phase,
+				)
+				aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s error: %w", source.Name, status.Error))
+			} else {
+				logger.Info(
+					"Data source is not ready",
+					"source", source.Name,
+					"phase", status.Phase,
+				)
+				aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s is unhealthy (phase: %s)", source.Name, status.Phase))
+			}
 
-			// Update status to Error
-			sourceStatuses[i].Phase = "Error"
+			// 2. 标记数据源状态为 Error（如果未设置）
+			if sourceStatuses[i].Phase != "Error" {
+				sourceStatuses[i].Phase = "Error"
+			}
 
-			h.EventsCli.Warning(dd, "SourceCheckFailed",
-				fmt.Sprintf("Data source %s check failed: %v", source.Name, status.Error))
-		} else if status.Phase != "Ready" {
-			allHealthy = false
-			aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s unhealthy: %s", source.Name, status.Phase))
-
-			h.EventsCli.Warning(dd, "SourceUnhealthy",
-				fmt.Sprintf("Data source %s unhealthy: %s", source.Name, status.Phase))
+			// 3. 触发 Kubernetes 事件（Warning 级别）
+			eventMsg := fmt.Sprintf("Data source %s check failed", source.Name)
+			if status.Error != nil {
+				eventMsg = fmt.Sprintf("%s: %v", eventMsg, status.Error)
+			} else {
+				eventMsg = fmt.Sprintf("%s: phase=%s", eventMsg, status.Phase)
+			}
+			h.EventsCli.Warning(dd, "SourceUnhealthy", eventMsg)
 		}
 	}
 
-	// Update DataDescriptor status
+	// 更新 OverallPhase 和 Conditions
 	dd.Status.SourceStatuses = sourceStatuses
 	if allHealthy {
 		dd.Status.OverallPhase = "Ready"
+		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionAvailable, corev1.ConditionTrue, "Available", "All data sources healthy")
+		dd.Status.SetDataDescriptorCondition(*c)
 		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy")
 	} else {
 		dd.Status.OverallPhase = "Error"
 		errorMsg := fmt.Sprintf("%d data sources have issues", len(aggregatedErrors))
+		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionFailed, corev1.ConditionTrue, "Degraded", errorMsg)
+		dd.Status.SetDataDescriptorCondition(*c)
 		h.EventsCli.Warning(dd, "SomeSourcesUnhealthy", errorMsg)
 	}
 
-	// Attempt to update status
+	// 提交状态更新
 	if err := h.Kubeclient.Status().Update(ctx, dd); err != nil {
-		logger.Error(err, "Failed to update DataDescriptor status")
-		aggregatedErrors = append(aggregatedErrors, fmt.Errorf("status update failed: %w", err))
+		logger.Error(err, "Failed to update status")
+		return fmt.Errorf("status update failed: %w", err)
 	}
 
-	// Return aggregated errors if any
+	// 返回聚合错误（如果有）
 	if len(aggregatedErrors) > 0 {
-		return fmt.Errorf("encountered %d errors: %v", len(aggregatedErrors), aggregatedErrors)
+		return fmt.Errorf("%d errors: %v", len(aggregatedErrors), aggregatedErrors)
 	}
-
-	// add code to call celery http server to send task for dd.
-	// todo
-
 	return nil
 }
 
