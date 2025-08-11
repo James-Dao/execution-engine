@@ -20,7 +20,7 @@ type DataDescriptorHandler struct {
 	Logger      logr.Logger
 }
 
-// SourceStatusResult 包含检查数据源状态的结果
+// SourceStatusResult contains the result of checking a data source status
 type SourceStatusResult struct {
 	Name         string
 	Phase        string
@@ -29,60 +29,85 @@ type SourceStatusResult struct {
 	Error        error
 }
 
-// Do 确保DataDescriptor处于预期状态并更新状态
+// Do ensures the DataDescriptor is in the desired state and updates its status
 func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
-	logger.Info("开始处理DataDescriptor")
+	logger.Info("Start processing DataDescriptor")
 
-	// 检查所有数据源状态
+	// Initialize status fields if needed
+	if dd.Status.SourceStatuses == nil {
+		dd.Status.SourceStatuses = make([]dacv1alpha1.SourceStatus, 0)
+	}
+
+	// Check all data source statuses
 	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(dd.Spec.Sources))
 	allHealthy := true
-	var firstErr error // 记录第一个遇到的错误
+	var aggregatedErrors []error
 
 	for i, source := range dd.Spec.Sources {
 		status := h.checkSourceStatus(ctx, source)
-		sourceStatuses[i] = dacv1alpha1.SourceStatus{
+		sourceStatus := dacv1alpha1.SourceStatus{
 			Name:         source.Name,
 			Phase:        status.Phase,
 			LastSyncTime: status.LastSyncTime,
 			Records:      status.Records,
 		}
+		sourceStatuses[i] = sourceStatus
 
 		if status.Error != nil {
-			logger.Error(status.Error, "数据源状态检查失败", "source", source.Name)
+			logger.Error(status.Error, "Data source status check failed", "source", source.Name)
 			allHealthy = false
+			aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s error: %w", source.Name, status.Error))
 
-			// 记录第一个错误
-			if firstErr == nil {
-				firstErr = fmt.Errorf("数据源 %s 检查失败: %w", source.Name, status.Error)
-			}
+			// Update status to Error
+			sourceStatuses[i].Phase = "Error"
 
 			h.EventsCli.Warning(dd, "SourceCheckFailed",
-				fmt.Sprintf("数据源 %s 检查失败: %v", source.Name, status.Error))
+				fmt.Sprintf("Data source %s check failed: %v", source.Name, status.Error))
 		} else if status.Phase != "Ready" {
 			allHealthy = false
-			if firstErr == nil {
-				firstErr = fmt.Errorf("数据源 %s 状态不正常: %s", source.Name, status.Phase)
-			}
+			aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s unhealthy: %s", source.Name, status.Phase))
+
+			h.EventsCli.Warning(dd, "SourceUnhealthy",
+				fmt.Sprintf("Data source %s unhealthy: %s", source.Name, status.Phase))
 		}
 	}
 
-	// 更新状态
+	// Update DataDescriptor status
+	dd.Status.SourceStatuses = sourceStatuses
 	if allHealthy {
-		h.EventsCli.Normal(dd, "AllSourcesHealthy", "所有数据源状态正常")
+		dd.Status.OverallPhase = "Ready"
+		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy")
 	} else {
-		h.EventsCli.Warning(dd, "SomeSourcesUnhealthy", "部分数据源状态异常")
+		dd.Status.OverallPhase = "Error"
+		errorMsg := fmt.Sprintf("%d data sources have issues", len(aggregatedErrors))
+		h.EventsCli.Warning(dd, "SomeSourcesUnhealthy", errorMsg)
 	}
 
-	// 如果有错误发生，返回第一个错误
-	if firstErr != nil {
-		return firstErr
+	// Attempt to update status
+	if err := h.Kubeclient.Status().Update(ctx, dd); err != nil {
+		logger.Error(err, "Failed to update DataDescriptor status")
+		aggregatedErrors = append(aggregatedErrors, fmt.Errorf("status update failed: %w", err))
+	}
+
+	// Return aggregated errors if any
+	if len(aggregatedErrors) > 0 {
+		return fmt.Errorf("encountered %d errors: %v", len(aggregatedErrors), aggregatedErrors)
 	}
 	return nil
 }
 
-// checkSourceStatus 检查单个数据源的状态
+// checkSourceStatus checks the status of a single data source
 func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
+	// Validate data source configuration
+	if source.Name == "" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Invalid",
+			Error: fmt.Errorf("data source name cannot be empty"),
+		}
+	}
+
 	switch source.Type {
 	case dacv1alpha1.DataSourceRedis:
 		return h.checkRedisStatus(ctx, source)
@@ -92,49 +117,106 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		return h.checkMinIOStatus(ctx, source)
 	default:
 		return SourceStatusResult{
+			Name:  source.Name,
 			Phase: "Unknown",
-			Error: fmt.Errorf("未知的数据源类型: %s", source.Type),
+			Error: fmt.Errorf("unknown data source type: %s", source.Type),
 		}
 	}
 }
 
-// checkRedisStatus 检查Redis数据源状态
+// checkRedisStatus checks Redis data source status
 func (h *DataDescriptorHandler) checkRedisStatus(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
+	// In a real implementation, we would:
+	// 1. Get connection details from source.Metadata
+	// 2. Connect to Redis
+	// 3. Check health and get stats
 
-	// 模拟返回
+	// Mock implementation
+	endpoint, ok := source.Metadata["endpoint"]
+	if !ok || endpoint == "" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Invalid",
+			Error: fmt.Errorf("Redis endpoint not configured in metadata"),
+		}
+	}
+
+	// Mock check
+	if source.Name == "bad-redis" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Error",
+			Error: fmt.Errorf("failed to connect to Redis server"),
+		}
+	}
+
 	return SourceStatusResult{
 		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
-		Records:      1000, // 模拟值
+		Records:      1000,
 	}
 }
 
-// checkMySQLStatus 检查MySQL数据源状态
+// checkMySQLStatus checks MySQL data source status
 func (h *DataDescriptorHandler) checkMySQLStatus(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
+	// Validate configuration
+	endpoint, ok := source.Metadata["endpoint"]
+	if !ok || endpoint == "" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Invalid",
+			Error: fmt.Errorf("MySQL endpoint not configured in metadata"),
+		}
+	}
 
-	// 模拟返回
+	// Mock check
+	if source.Name == "bad-mysql" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Error",
+			Error: fmt.Errorf("MySQL connection failed: access denied"),
+		}
+	}
+
 	return SourceStatusResult{
 		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
-		Records:      5000, // 模拟值
+		Records:      5000,
 	}
 }
 
-// checkMinIOStatus 检查MinIO数据源状态
+// checkMinIOStatus checks MinIO data source status
 func (h *DataDescriptorHandler) checkMinIOStatus(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
+	// Validate configuration
+	endpoint, ok := source.Metadata["endpoint"]
+	if !ok || endpoint == "" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Invalid",
+			Error: fmt.Errorf("MinIO endpoint not configured in metadata"),
+		}
+	}
 
-	// 模拟返回
+	// Mock check
+	if source.Name == "bad-minio" {
+		return SourceStatusResult{
+			Name:  source.Name,
+			Phase: "Error",
+			Error: fmt.Errorf("MinIO bucket not accessible"),
+		}
+	}
+
 	return SourceStatusResult{
 		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
-		Records:      200, // 模拟值
+		Records:      200,
 	}
 }
 
-// GetSourceStatus 获取指定数据源状态(供控制器调用)
+// GetSourceStatus gets the status of a specific data source (for controller use)
 func (h *DataDescriptorHandler) GetSourceStatus(ctx context.Context, source dacv1alpha1.DataSource) dacv1alpha1.SourceStatus {
 	result := h.checkSourceStatus(ctx, source)
 	return dacv1alpha1.SourceStatus{
