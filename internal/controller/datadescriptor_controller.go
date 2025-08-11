@@ -70,7 +70,7 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
-	err = r.Handler.Do(instance)
+	err = r.Handler.Do(ctx, instance)
 
 	if err != nil {
 		logger.Error(err, "DataDescriptor Handler err")
@@ -78,21 +78,6 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	return ctrl.Result{}, nil
-}
-
-// Example controller function that updates status
-func (r *DataDescriptorReconciler) updateDataDescriptorStatus(dd *dacv1alpha1.DataDescriptor, phase string, sourceStatuses []dacv1alpha1.SourceStatus, consumedBy []dacv1alpha1.LocalObjectReference) {
-	// Update overall phase
-	dd.Status.OverallPhase = phase
-
-	// Update source statuses
-	dd.Status.SourceStatuses = sourceStatuses
-
-	// Update consumedBy references
-	dd.Status.ConsumedBy = consumedBy
-
-	// Sort conditions by time
-	dd.Status.DescConditionsByTime()
 }
 
 // Example controller function that updates status
@@ -134,6 +119,21 @@ func (r *DataDescriptorReconciler) updateStatus(ctx context.Context, dd *dacv1al
 
 	// Update the status in Kubernetes
 	return r.Status().Update(ctx, dd)
+}
+
+// Example controller function that updates status
+func (r *DataDescriptorReconciler) updateDataDescriptorStatus(dd *dacv1alpha1.DataDescriptor, phase string, sourceStatuses []dacv1alpha1.SourceStatus, consumedBy []dacv1alpha1.LocalObjectReference) {
+	// Update overall phase
+	dd.Status.OverallPhase = phase
+
+	// Update source statuses
+	dd.Status.SourceStatuses = sourceStatuses
+
+	// Update consumedBy references
+	dd.Status.ConsumedBy = consumedBy
+
+	// Sort conditions by time
+	dd.Status.DescConditionsByTime()
 }
 
 // SetupWithManager sets up the controller with the Manager.
