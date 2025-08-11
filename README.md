@@ -67,3 +67,23 @@ make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v
 make build-installer IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64"
 
 
+# 配置
+
+发送http请求的配置参数
+
+export API_BASE_URL="http://api.example.com:8080"
+
+export API_HTTP_TIMEOUT="30s"      # 30秒
+export API_HTTP_TIMEOUT="2m"       # 2分钟
+export API_HTTP_TIMEOUT="1h30m"    # 1小时30分钟
+
+
+export API_MAX_RETRIES="5"
+
+
+export API_RETRY_DELAY="1s"        # 1秒
+export API_RETRY_DELAY="500ms"     # 500毫秒
+
+
+
+
