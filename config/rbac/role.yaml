@@ -5,6 +5,63 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - services
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - deletecollection
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - replicasets
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/finalizers
+  verbs:
+  - delete
+  - deletecollection
+  - update
+- apiGroups:
   - dac.dac.io
   resources:
   - dataagentcontainers
@@ -33,3 +90,17 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch

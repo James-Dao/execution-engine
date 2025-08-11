@@ -39,6 +39,15 @@ type DataAgentContainerReconciler struct {
 // +kubebuilder:rbac:groups=dac.dac.io,resources=dataagentcontainers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=dac.dac.io,resources=dataagentcontainers/finalizers,verbs=update
 // +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;delete;deletecollection
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update;delete;deletecollection
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete;deletecollection
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete;deletecollection
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
