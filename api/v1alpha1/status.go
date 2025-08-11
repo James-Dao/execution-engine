@@ -37,7 +37,7 @@ type Condition struct {
 	Message string `json:"message,omitempty"`
 }
 
-func newCondition(condType ConditionType, status corev1.ConditionStatus, reason, message string) *Condition {
+func NewCondition(condType ConditionType, status corev1.ConditionStatus, reason, message string) *Condition {
 	now := time.Now()
 	nowString := now.Format(time.RFC3339)
 	return &Condition{
@@ -68,7 +68,7 @@ func getDataDescriptorCondition(status *DataDescriptorStatus, t ConditionType) (
 	return -1, nil
 }
 
-func (dds *DataDescriptorStatus) setDataDescriptorCondition(c Condition) {
+func (dds *DataDescriptorStatus) SetDataDescriptorCondition(c Condition) {
 	pos, cp := getDataDescriptorCondition(dds, c.Type)
 	if cp != nil && cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
 		now := time.Now()
@@ -85,8 +85,8 @@ func (dds *DataDescriptorStatus) setDataDescriptorCondition(c Condition) {
 }
 
 func (dds *DataDescriptorStatus) SetCreateCondition(message string) {
-	c := newCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
-	dds.setDataDescriptorCondition(*c)
+	c := NewCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
+	dds.SetDataDescriptorCondition(*c)
 }
 
 // DataAgentContainer Status
@@ -107,7 +107,7 @@ func getDataAgentContainerCondition(status *DataAgentContainerStatus, t Conditio
 	return -1, nil
 }
 
-func (dacs *DataAgentContainerStatus) setDataAgentContainerCondition(c Condition) {
+func (dacs *DataAgentContainerStatus) SetDataAgentContainerCondition(c Condition) {
 	pos, cp := getDataAgentContainerCondition(dacs, c.Type)
 	if cp != nil && cp.Status == c.Status && cp.Reason == c.Reason && cp.Message == c.Message {
 		now := time.Now()
@@ -124,6 +124,6 @@ func (dacs *DataAgentContainerStatus) setDataAgentContainerCondition(c Condition
 }
 
 func (dacs *DataAgentContainerStatus) SetCreateCondition(message string) {
-	c := newCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
-	dacs.setDataAgentContainerCondition(*c)
+	c := NewCondition(ConditionCreating, corev1.ConditionTrue, "Creating", message)
+	dacs.SetDataAgentContainerCondition(*c)
 }
