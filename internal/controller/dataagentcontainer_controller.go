@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-
 	"github.com/James-Dao/execution-engine/internal/handler"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,10 +72,10 @@ func (r *DataAgentContainerReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	if err != nil {
 		logger.Error(err, "DataAgentContainer Handler err: ", err)
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-
 	"github.com/James-Dao/execution-engine/internal/handler"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -26,8 +25,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
+)
+
+const (
+	requeueAfter = 20 * time.Second
 )
 
 // DataDescriptorReconciler reconciles a DataDescriptor object
@@ -74,10 +78,10 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	if err != nil {
 		logger.Error(err, "DataDescriptor Handler err")
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: requeueAfter}, err
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
 // Example controller function that updates status
