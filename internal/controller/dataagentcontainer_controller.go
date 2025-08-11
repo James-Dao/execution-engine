@@ -29,10 +29,6 @@ import (
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 )
 
-var (
-	dacLog = logf.Log.WithName("controller_DataDescriptor")
-)
-
 // DataAgentContainerReconciler reconciles a DataAgentContainer object
 type DataAgentContainerReconciler struct {
 	client.Client

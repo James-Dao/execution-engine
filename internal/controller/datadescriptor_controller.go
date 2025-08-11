@@ -29,10 +29,6 @@ import (
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 )
 
-var (
-	ddLog = logf.Log.WithName("controller_DataDescriptor")
-)
-
 // DataDescriptorReconciler reconciles a DataDescriptor object
 type DataDescriptorReconciler struct {
 	client.Client
