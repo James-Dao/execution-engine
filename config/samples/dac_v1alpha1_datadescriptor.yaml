@@ -1,9 +1,56 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: data-secret
+  namespace: dac
+type: Opaque
+data:
+  username: YWRtaW4=
+  password: YWRtaW4=
+
+---
 apiVersion: dac.dac.io/v1alpha1
 kind: DataDescriptor
 metadata:
+  name: dataDescriptor0
+  namespace: dac
   labels:
     app.kubernetes.io/name: execution-engine
     app.kubernetes.io/managed-by: kustomize
-  name: datadescriptor-sample
 spec:
-  # TODO(user): Add fields here
+  sources:
+    # - type: mysql
+    #   name: "mysql-production"
+    #   metadata:
+    #     address: "localhost:3306"
+    #     database: "data0"
+    #   extract:
+    #     tables: ["users", "products"]
+    #     query: "SELECT * FROM logs WHERE created_at > '2023-01-01'"
+    #     batchSize: 1000
+    #   authenticationRef:
+    #     name: auth-secret
+    #   processing:
+    #     cleaning:
+    #       - rule: "remove_duplicates"
+    #         params: {fields: ["user_id", "timestamp"]}
+    #       - rule: "fill_missing"
+    #         params: {field: "price", value: 0}
+    #   classification:
+    #     - domain: "科学技术类"
+    #       category: "计算机科学与技术"
+    #       subcategory: "软件工程师"
+    #       tags:
+    #         - skill: ["编程", "算法"]
+    #         - industry: ["互联网"]
+    - type: minio
+      name: "minio-production"
+      metadata:
+        address: "localhost:9000"
+        bucket: "bucket0"
+        prefix: "logs/"
+      extract:
+        fileFormat: "json"
+        compression: "gzip"
+      authenticationRef:
+        name: data-secret
