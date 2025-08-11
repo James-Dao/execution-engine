@@ -26,12 +26,22 @@ COPY client/ client/
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
 RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
 
+
+# for timezone
+FROM docker.m.daocloud.io/alpine:latest AS timezone
+RUN apk add --no-cache tzdata
+
+
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 #FROM gcr.io/distroless/static:nonroot
 FROM registry.cn-shanghai.aliyuncs.com/jamesxiong/static:nonroot-amd64
 WORKDIR /
 COPY --from=builder /workspace/manager .
+
+COPY --from=timezone /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ENV TZ=Asia/Shanghai
+
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
