@@ -32,7 +32,12 @@ make run
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
 
+
+
 make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64" BUILDPLATFORM=linux/amd64
+
+
+
 
 ## arm64:
 
@@ -64,7 +69,12 @@ make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v
 
 在当前dir下生成dist文件夹，在文件夹下生成一个完整的install的yaml，直接在需要安装的集群，apply这个yaml就完成安装。
 
+
+
 make build-installer IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64"
+
+
+
 
 
 # 配置

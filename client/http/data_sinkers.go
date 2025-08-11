@@ -219,39 +219,20 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.HTTPTimeout)
 	defer cancel()
 
-	// 示例1: 发送简单数据
-	simpleData := map[string]interface{}{
-		"sample": 123,
-		"name":   "test",
+	// 示例1: 发送符合服务端要求的数据结构
+	requestData := map[string]interface{}{
+		"data": map[string]interface{}{ // 注意这里嵌套了data字段
+			"sample": 123,
+			"name":   "test",
+		},
 	}
-	taskID, err := client.TriggerTask(ctx, simpleData)
+	taskID, err := client.TriggerTask(ctx, requestData)
 	if err != nil {
 		fmt.Printf("Failed to trigger task: %v\n", err)
 		return
 	}
-	fmt.Printf("Triggered task with ID: %s\n", taskID)
 
-	// 示例2: 发送嵌套结构数据
-	type ComplexData struct {
-		ID      int      `json:"id"`
-		Tags    []string `json:"tags"`
-		Details struct {
-			Enabled bool `json:"enabled"`
-		} `json:"details"`
-	}
-	complexData := ComplexData{
-		ID:   1001,
-		Tags: []string{"tag1", "tag2"},
-		Details: struct {
-			Enabled bool `json:"enabled"`
-		}{Enabled: true},
-	}
-	taskID2, err := client.TriggerTask(ctx, complexData)
-	if err != nil {
-		fmt.Printf("Failed to trigger task: %v\n", err)
-		return
-	}
-	fmt.Printf("Triggered task with ID: %s\n", taskID2)
+	fmt.Printf("Triggered task with ID: %s\n", taskID)
 
 	// 查询任务状态
 	status, err := client.GetTaskStatus(ctx, taskID)
