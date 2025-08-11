@@ -54,19 +54,19 @@ type DataDescriptorReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	logger := logf.FromContext(ctx)
 
 	// TODO(user): your logic here
 
-	reqLogger := ddLog.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name, "type", "DataDescriptor")
-	reqLogger.Info("Reconciling DataDescriptor")
+	logger.Info("开始协调 DataDescriptor", "namespace", req.Namespace, "name", req.Name, "type", "DataDescriptor")
+	logger.Info("Reconciling DataDescriptor")
 
 	// Fetch the DataDescriptor instance
 	instance := &dacv1alpha1.DataDescriptor{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("DataDescriptor delete")
+			logger.Info("DataDescriptor deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -76,7 +76,7 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	err = r.Handler.Do(instance)
 
 	if err != nil {
-		reqLogger.Info("DataDescriptor Handler err: ", err)
+		logger.Error(err, "DataDescriptor Handler err")
 		return ctrl.Result{}, err
 	}
 

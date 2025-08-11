@@ -54,19 +54,19 @@ type DataAgentContainerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *DataAgentContainerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	logger := logf.FromContext(ctx)
 
 	// TODO(user): your logic here
 
-	reqLogger := ddLog.WithValues("Request.Namespace", req.Namespace, "Request.Name", req.Name, "type", "DataAgentContainer")
-	reqLogger.Info("Reconciling DataAgentContainer")
+	logger.Info("开始协调 DataAgentContainer", "namespace", req.Namespace, "name", req.Name, "type", "DataAgentContainer")
+	logger.Info("Reconciling DataDescriptor")
 
 	// Fetch the DataAgentContainer instance
 	instance := &dacv1alpha1.DataAgentContainer{}
 	err := r.Client.Get(context.TODO(), req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			reqLogger.Info("DataAgentContainer delete")
+			logger.Error(err, "DataAgentContainer deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -76,7 +76,7 @@ func (r *DataAgentContainerReconciler) Reconcile(ctx context.Context, req ctrl.R
 	err = r.Handler.Do(instance)
 
 	if err != nil {
-		reqLogger.Info("DataAgentContainer Handler err: ", err)
+		logger.Error(err, "DataAgentContainer Handler err: ", err)
 		return ctrl.Result{}, err
 	}
 

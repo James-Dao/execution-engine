@@ -12,7 +12,7 @@ data:
 apiVersion: dac.dac.io/v1alpha1
 kind: DataDescriptor
 metadata:
-  name: dataDescriptor0
+  name: dd-0
   namespace: dac
   labels:
     app.kubernetes.io/name: execution-engine
@@ -53,4 +53,4 @@ spec:
         fileFormat: "json"
         compression: "gzip"
       authenticationRef:
-        name: data-secret
+        name: "data-secret"
