@@ -37,6 +37,7 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	// 检查所有数据源状态
 	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(dd.Spec.Sources))
 	allHealthy := true
+	var firstErr error // 记录第一个遇到的错误
 
 	for i, source := range dd.Spec.Sources {
 		status := h.checkSourceStatus(ctx, source)
@@ -50,10 +51,19 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 		if status.Error != nil {
 			logger.Error(status.Error, "数据源状态检查失败", "source", source.Name)
 			allHealthy = false
+
+			// 记录第一个错误
+			if firstErr == nil {
+				firstErr = fmt.Errorf("数据源 %s 检查失败: %w", source.Name, status.Error)
+			}
+
 			h.EventsCli.Warning(dd, "SourceCheckFailed",
 				fmt.Sprintf("数据源 %s 检查失败: %v", source.Name, status.Error))
 		} else if status.Phase != "Ready" {
 			allHealthy = false
+			if firstErr == nil {
+				firstErr = fmt.Errorf("数据源 %s 状态不正常: %s", source.Name, status.Phase)
+			}
 		}
 	}
 
@@ -64,6 +74,10 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 		h.EventsCli.Warning(dd, "SomeSourcesUnhealthy", "部分数据源状态异常")
 	}
 
+	// 如果有错误发生，返回第一个错误
+	if firstErr != nil {
+		return firstErr
+	}
 	return nil
 }
 
