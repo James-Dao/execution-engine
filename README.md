@@ -34,7 +34,9 @@ docker-build: ## Build docker image with the manager.
 
 
 
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64" BUILDPLATFORM=linux/amd64
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-amd64" BUILDPLATFORM=linux/amd64
+
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-amd64"
 
 
 
@@ -47,7 +49,7 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 docker-build: ## Build docker image with the manager.
 	$(CONTAINER_TOOL) build --platform linux/amd64 -t ${IMG} .
 
-make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64" BUILDPLATFORM=linux/arm64
+make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-amd64" BUILDPLATFORM=linux/arm64
 
 # deploy
 
@@ -59,9 +61,13 @@ make docker-build docker-push IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/
 
 ## 下发 controller 到 k8s的execution-engine-system namespace下
 
-make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64"
 
-make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-arm64"
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-amd64"
+
+
+
+
+make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-arm64"
 
 
 
@@ -71,7 +77,7 @@ make deploy IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v
 
 
 
-make build-installer IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.3-amd64"
+make build-installer IMG="registry.cn-shanghai.aliyuncs.com/jamesxiong/execution-engine:v0.0.4-amd64"
 
 
 
