@@ -22,6 +22,7 @@ type DataDescriptorHandler struct {
 
 // SourceStatusResult 包含检查数据源状态的结果
 type SourceStatusResult struct {
+	Name         string
 	Phase        string
 	LastSyncTime metav1.Time
 	Records      int64
@@ -88,6 +89,7 @@ func (h *DataDescriptorHandler) checkRedisStatus(ctx context.Context, source dac
 
 	// 模拟返回
 	return SourceStatusResult{
+		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
 		Records:      1000, // 模拟值
@@ -99,6 +101,7 @@ func (h *DataDescriptorHandler) checkMySQLStatus(ctx context.Context, source dac
 
 	// 模拟返回
 	return SourceStatusResult{
+		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
 		Records:      5000, // 模拟值
@@ -110,6 +113,7 @@ func (h *DataDescriptorHandler) checkMinIOStatus(ctx context.Context, source dac
 
 	// 模拟返回
 	return SourceStatusResult{
+		Name:         source.Name,
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
 		Records:      200, // 模拟值
