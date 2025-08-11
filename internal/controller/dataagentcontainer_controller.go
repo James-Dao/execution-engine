@@ -38,6 +38,7 @@ type DataAgentContainerReconciler struct {
 // +kubebuilder:rbac:groups=dac.dac.io,resources=dataagentcontainers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=dac.dac.io,resources=dataagentcontainers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=dac.dac.io,resources=dataagentcontainers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

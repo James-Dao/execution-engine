@@ -46,7 +46,7 @@ spec:
     - type: minio
       name: "minio-production"
       metadata:
-        address: "localhost:9000"
+        endpoint: "localhost:9000"
         bucket: "bucket0"
         prefix: "logs/"
       extract:
@@ -54,3 +54,38 @@ spec:
         compression: "gzip"
       authenticationRef:
         name: "data-secret"
+
+
+
+
+
+# apiVersion: dac.dac.io/v1alpha1
+# kind: DataDescriptor
+# metadata:
+#   creationTimestamp: '2025-08-11T07:18:17Z'
+#   generation: 1
+#   labels:
+#     app.kubernetes.io/managed-by: kustomize
+#     app.kubernetes.io/name: execution-engine
+#   name: dd-0
+#   namespace: dac
+#   resourceVersion: '61337529'
+#   uid: 19e10f25-db8b-4d8b-ad15-f94607d23a8b
+# spec:
+#   sources:
+#     - authenticationRef:
+#         name: data-secret
+#       extract:
+#         compression: gzip
+#         fileFormat: json
+#       metadata:
+#         address: localhost:9000
+#         bucket: bucket0
+#         prefix: logs/
+#       name: minio-production
+#       type: minio
+# status:
+#   overallPhase: Error
+#   sourceStatuses:
+#     - name: minio-production
+#       phase: Error
