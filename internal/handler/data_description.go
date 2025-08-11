@@ -141,15 +141,6 @@ func (h *DataDescriptorHandler) checkRedisStatus(ctx context.Context, source dac
 		}
 	}
 
-	// Mock check
-	if source.Name == "bad-redis" {
-		return SourceStatusResult{
-			Name:  source.Name,
-			Phase: "Error",
-			Error: fmt.Errorf("failed to connect to Redis server"),
-		}
-	}
-
 	return SourceStatusResult{
 		Name:         source.Name,
 		Phase:        "Ready",
@@ -170,15 +161,6 @@ func (h *DataDescriptorHandler) checkMySQLStatus(ctx context.Context, source dac
 		}
 	}
 
-	// Mock check
-	if source.Name == "bad-mysql" {
-		return SourceStatusResult{
-			Name:  source.Name,
-			Phase: "Error",
-			Error: fmt.Errorf("MySQL connection failed: access denied"),
-		}
-	}
-
 	return SourceStatusResult{
 		Name:         source.Name,
 		Phase:        "Ready",
@@ -196,15 +178,6 @@ func (h *DataDescriptorHandler) checkMinIOStatus(ctx context.Context, source dac
 			Name:  source.Name,
 			Phase: "Invalid",
 			Error: fmt.Errorf("MinIO endpoint not configured in metadata"),
-		}
-	}
-
-	// Mock check
-	if source.Name == "bad-minio" {
-		return SourceStatusResult{
-			Name:  source.Name,
-			Phase: "Error",
-			Error: fmt.Errorf("MinIO bucket not accessible"),
 		}
 	}
 
