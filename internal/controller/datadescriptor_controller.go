@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 
+	"github.com/James-Dao/execution-engine/internal/handler"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -35,7 +36,8 @@ var (
 // DataDescriptorReconciler reconciles a DataDescriptor object
 type DataDescriptorReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
+	Handler *handler.DataDescriptorHandler
 }
 
 // +kubebuilder:rbac:groups=dac.dac.io,resources=datadescriptors,verbs=get;list;watch;create;update;patch;delete

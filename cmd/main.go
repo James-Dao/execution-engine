@@ -27,6 +27,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/James-Dao/execution-engine/client/k8s"
+	"github.com/James-Dao/execution-engine/internal/handler"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -203,21 +204,37 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create kubernetes service.
+	// Create dataDescriptorHandler
 	k8sService := k8s.New(mgr.GetClient(), mgr.GetLogger().WithName("controller_k8s"))
+	dataDescriptorEventsCli := k8s.NewEvent(mgr.GetEventRecorderFor("DataDescriptor"), mgr.GetLogger().WithName("DataDescriptor"))
+	dataDescriptorHandler := &handler.DataDescriptorHandler{
+		K8sServices: k8sService,
+		EventsCli:   dataDescriptorEventsCli,
+		Kubeclient:  mgr.GetClient(),
+		Logger:      mgr.GetLogger().WithName("DataDescriptor"),
+	}
 
-	print(k8sService)
+	// Create dataAgentContainerHandler
+	dataAgentContainerEventsCli := k8s.NewEvent(mgr.GetEventRecorderFor("DataAgentContainer"), mgr.GetLogger().WithName("DataAgentContainer"))
+	dataAgentContainerHandler := &handler.DataAgentContainerHandler{
+		K8sServices: k8sService,
+		EventsCli:   dataAgentContainerEventsCli,
+		Kubeclient:  mgr.GetClient(),
+		Logger:      mgr.GetLogger().WithName("DataAgentContainer"),
+	}
 
 	if err := (&controller.DataDescriptorReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Handler: dataDescriptorHandler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataDescriptor")
 		os.Exit(1)
 	}
 	if err := (&controller.DataAgentContainerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Handler: dataAgentContainerHandler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DataAgentContainer")
 		os.Exit(1)
