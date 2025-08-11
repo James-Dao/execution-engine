@@ -35,10 +35,12 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	logger.Info("Processing DataDescriptor")
 
 	// handle dd logic
-	err := h.handleDD(ctx, dd)
+	taskIDs, err := h.handleDD(ctx, dd)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("taskIDs:", taskIDs)
 
 	// handle dd status
 	err = h.handleDDStatus(ctx, dd)
@@ -49,11 +51,16 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	return nil
 }
 
-func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
+func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.DataDescriptor) (map[string][]string, error) {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
 	logger.Info("Processing DataDescriptor Logic")
 
-	return nil
+	// todo generate task ids for every source
+	taskIDs := map[string][]string{}
+
+	fmt.Println("taskIDs:", taskIDs)
+
+	return taskIDs, nil
 }
 
 func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
@@ -85,6 +92,7 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 			Phase:        status.Phase,
 			LastSyncTime: status.LastSyncTime,
 			Records:      status.Records,
+			TaskID:       "",
 		}
 
 		if status.Error != nil || status.Phase != "Ready" {

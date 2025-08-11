@@ -193,9 +193,8 @@ spec:
                     records:
                       format: int64
                       type: integer
-                  required:
-                  - name
-                  - phase
+                    taskID:
+                      type: string
                   type: object
                 type: array
             type: object

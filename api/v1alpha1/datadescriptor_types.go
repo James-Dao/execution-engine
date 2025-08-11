@@ -78,10 +78,11 @@ type LocalObjectReference struct {
 
 // SourceStatus defines the status of a data source
 type SourceStatus struct {
-	Name         string      `json:"name"`
-	Phase        string      `json:"phase"`
+	Name         string      `json:"name,omitempty"`
+	Phase        string      `json:"phase,omitempty"`
 	LastSyncTime metav1.Time `json:"lastSyncTime,omitempty"`
 	Records      int64       `json:"records,omitempty"`
+	TaskID       string      `json:"taskID,omitempty"`
 }
 
 // DataDescriptorSpec defines the desired state of DataDescriptor.
