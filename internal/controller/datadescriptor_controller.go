@@ -73,6 +73,13 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 
+	err = r.Handler.Do(instance)
+
+	if err != nil {
+		reqLogger.Info("DataDescriptor Handler err: ", err)
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
 }
 
