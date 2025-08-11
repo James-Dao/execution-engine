@@ -29,10 +29,36 @@ type AgentStatusResult struct {
 	Error                 error
 }
 
-// Do processes the DataAgentContainer resource and updates its status.
 func (h *DataAgentContainerHandler) Do(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) error {
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Processing DataAgentContainer")
+
+	// handle dac logic
+	err := h.handleDAC(ctx, dac)
+	if err != nil {
+		return err
+	}
+
+	// handle dac status
+	err = h.handleDACStatus(ctx, dac)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *DataAgentContainerHandler) handleDAC(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) error {
+	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
+	logger.Info("Processing DataAgentContainer Logic")
+
+	return nil
+}
+
+// Do processes the DataAgentContainer resource and updates its status.
+func (h *DataAgentContainerHandler) handleDACStatus(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) error {
+	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
+	logger.Info("Processing DataAgentContainer Status")
 
 	// Initialize status fields if needed
 	if dac.Status.Conditions == nil {

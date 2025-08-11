@@ -34,6 +34,32 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
 	logger.Info("Processing DataDescriptor")
 
+	// handle dd logic
+	err := h.handleDD(ctx, dd)
+	if err != nil {
+		return err
+	}
+
+	// handle dd status
+	err = h.handleDDStatus(ctx, dd)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
+	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
+	logger.Info("Processing DataDescriptor Logic")
+
+	return nil
+}
+
+func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
+	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
+	logger.Info("Processing DataDescriptor Status")
+
 	// 初始化 Status 字段
 	if dd.Status.SourceStatuses == nil {
 		dd.Status.SourceStatuses = make([]dacv1alpha1.SourceStatus, 0)
