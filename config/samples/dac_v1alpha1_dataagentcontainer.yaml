@@ -10,26 +10,26 @@ spec:
   dataPolicy:
     selector:
       # 可以按数据源名称选择
-      sourceNameSelector: ["dd-0", "s3-raw-data"]
+      sourceNameSelector: ["dd-0"]
 
       # 也可以继续按分类选择
-      matchClassifications:
-        # 支持多层级匹配 (domain → category → subcategory)
-        - domain: "科学技术类"
-          category: "计算机科学与技术"
-          subcategory: "软件工程师"  # 精确到三级
-          matchPolicy: "exact"  # exact/prefix/regex
+      # matchClassifications:
+      #   # 支持多层级匹配 (domain → category → subcategory)
+      #   - domain: "科学技术类"
+      #     category: "计算机科学与技术"
+      #     subcategory: "软件工程师"  # 精确到三级
+      #     matchPolicy: "exact"  # exact/prefix/regex
         
-        # 支持不同粒度的匹配
-        - domain: "商业与金融类"  # 只匹配domain层级
-          matchPolicy: "prefix"
+      #   # 支持不同粒度的匹配
+      #   - domain: "商业与金融类"  # 只匹配domain层级
+      #     matchPolicy: "prefix"
         
-        # 支持通配符
-        - category: "*工程*"  # 匹配所有包含"工程"的category
+      #   # 支持通配符
+      #   - category: "*工程*"  # 匹配所有包含"工程"的category
         
-        # 支持多条件组合
-        - domain: "艺术与设计类"
-          category: ["设计", "视觉艺术"]  # 匹配多个category
+      #   # 支持多条件组合
+      #   - domain: "艺术与设计类"
+      #     category: ["设计", "视觉艺术"]  # 匹配多个category
   agentCard:
     name: "Coder Agent"
     description: "help user with writing code according to requirements"

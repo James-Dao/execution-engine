@@ -29,7 +29,7 @@ type DataPolicy struct {
 	SourceNameSelector []string `json:"sourceNameSelector,omitempty"`
 
 	// Selector for data sources by classification
-	MatchClassifications []ClassificationMatch `json:"matchClassifications,omitempty"`
+	// MatchClassifications []ClassificationMatch `json:"matchClassifications,omitempty"`
 }
 
 // ClassificationMatch defines how to match data sources by their classification

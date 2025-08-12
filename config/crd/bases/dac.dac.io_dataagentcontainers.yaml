@@ -90,29 +90,6 @@ spec:
               dataPolicy:
                 description: DataPolicy defines how data sources should be selected
                 properties:
-                  matchClassifications:
-                    description: Selector for data sources by classification
-                    items:
-                      description: ClassificationMatch defines how to match data sources
-                        by their classification
-                      properties:
-                        category:
-                          description: Category of the data (can be string or array
-                            of strings)
-                          items:
-                            type: string
-                          type: array
-                        domain:
-                          description: Domain of the data
-                          type: string
-                        matchPolicy:
-                          description: Matching policy (exact/prefix/regex)
-                          type: string
-                        subcategory:
-                          description: Subcategory of the data
-                          type: string
-                      type: object
-                    type: array
                   sourceNameSelector:
                     description: Selector for data sources by name
                     items:
