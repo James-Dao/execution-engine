@@ -78,7 +78,7 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	err = r.Handler.Do(ctx, instance)
 	if err != nil {
 		logger.Error(err, "DataDescriptor Handler err")
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, err
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	// 如果有任务未完成，稍后检查

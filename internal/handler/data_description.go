@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -44,7 +45,7 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 		return fmt.Errorf("failed to handle data descriptor: %w", err)
 	}
 
-	logger.Info("taskIDs:", taskIDs)
+	logger.Info("task IDs", "taskIDs", taskIDs)
 
 	// handle dd status
 	err = h.handleDDStatus(ctx, dd, taskIDs)
@@ -124,20 +125,26 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
 	logger.Info("Processing DataDescriptor Status")
 
-	// 初始化 Status 字段
-	if dd.Status.SourceStatuses == nil {
-		dd.Status.SourceStatuses = make([]dacv1alpha1.SourceStatus, 0)
-	}
-	if dd.Status.Conditions == nil {
-		dd.Status.Conditions = make([]dacv1alpha1.Condition, 0)
+	// Save the original status for comparison later
+	originalStatus := dd.Status.DeepCopy()
+
+	// Initialize Status if needed
+	newStatus := dacv1alpha1.DataDescriptorStatus{
+		SourceStatuses: make([]dacv1alpha1.SourceStatus, 0),
+		Conditions:     make([]dacv1alpha1.Condition, 0),
 	}
 
-	// 如果是新资源，设置初始化 Condition
+	// Copy existing conditions if they exist
+	if dd.Status.Conditions != nil {
+		newStatus.Conditions = append(newStatus.Conditions, dd.Status.Conditions...)
+	}
+
+	// If this is a new resource, set initial condition
 	if dd.Status.OverallPhase == "" {
-		dd.Status.SetCreateCondition("Initializing data descriptor")
+		newStatus.SetCreateCondition("Initializing data descriptor")
 	}
 
-	// 检查数据源状态以及同步状态到K8S cr对象的status中
+	// Check data source statuses
 	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(dd.Spec.Sources))
 	allHealthy := true
 	var aggregatedErrors []error
@@ -160,7 +167,6 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 
 		if status.Error != nil || status.Phase != "Ready" {
 			allHealthy = false
-			// 1. 记录错误日志
 			if status.Error != nil {
 				logger.Error(
 					status.Error,
@@ -171,58 +177,104 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 				aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s error: %w", source.Name, status.Error))
 			} else {
 				logger.Info(
-					"Data source is not ready",
+					"Data source or data source task is not ready",
 					"source", source.Name,
 					"phase", status.Phase,
 				)
-				aggregatedErrors = append(aggregatedErrors, fmt.Errorf("data source %s is unhealthy (phase: %s)", source.Name, status.Phase))
 			}
 
-			// 2. 标记数据源状态为 Error（如果未设置）
-			if sourceStatuses[i].Phase != "Error" {
-				sourceStatuses[i].Phase = "Error"
-			}
-
-			// 3. 触发 Kubernetes 事件（Warning 级别）
-			eventMsg := fmt.Sprintf("Data source %s check failed", source.Name)
+			eventMsg := fmt.Sprintf("Data source %s task check failed", source.Name)
 			if status.Error != nil {
 				eventMsg = fmt.Sprintf("%s: %v", eventMsg, status.Error)
 			} else {
 				eventMsg = fmt.Sprintf("%s: phase=%s", eventMsg, status.Phase)
 			}
-			h.EventsCli.Warning(dd, "SourceUnhealthy", eventMsg)
-		} else if status.TaskID != "" {
-			h.EventsCli.Normal(dd, "TaskTriggered",
-				fmt.Sprintf("Task %s triggered for source %s", status.TaskID, source.Name))
+			h.EventsCli.Warning(dd, "SourceTaskNotReady", eventMsg)
+		} else {
+			h.EventsCli.Normal(dd, "TaskTriggered", fmt.Sprintf("Task %s Completed for data source %s", status.TaskID, source.Name))
 		}
 	}
 
-	// 更新 OverallPhase 和 Conditions
-	dd.Status.SourceStatuses = sourceStatuses
+	// Update the new status
+	newStatus.SourceStatuses = sourceStatuses
 	if allHealthy {
-		dd.Status.OverallPhase = "Ready"
-		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionAvailable, corev1.ConditionTrue, "Available", "All data sources healthy")
-		dd.Status.SetDataDescriptorCondition(*c)
-		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy and tasks triggered")
+		newStatus.OverallPhase = "Ready"
+		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionAvailable, corev1.ConditionTrue, "Available", "All data sources healthy.")
+		newStatus.SetDataDescriptorCondition(*c)
+		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy and tasks triggered and Completed.")
 	} else {
-		dd.Status.OverallPhase = "Error"
-		errorMsg := fmt.Sprintf("%d data sources have issues", len(aggregatedErrors))
+		newStatus.OverallPhase = "NotReady"
+		errorMsg := fmt.Sprintf("%d data sources task have issues or not completed", len(aggregatedErrors))
 		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionFailed, corev1.ConditionTrue, "Degraded", errorMsg)
-		dd.Status.SetDataDescriptorCondition(*c)
-		h.EventsCli.Warning(dd, "SomeSourcesUnhealthy", errorMsg)
+		newStatus.SetDataDescriptorCondition(*c)
+		h.EventsCli.Warning(dd, "SomeSourcesTaskUnhealthy", errorMsg)
 	}
 
-	// 提交状态更新
-	if err := h.Kubeclient.Status().Update(ctx, dd); err != nil {
-		logger.Error(err, "Failed to update status")
-		return fmt.Errorf("status update failed: %w", err)
+	// Compare the new status with original, ignoring time fields
+	if !h.isStatusEqualIgnoringTime(*originalStatus, newStatus) {
+		// Update the status in the original object
+		dd.Status = newStatus
+
+		// Submit status update
+		if err := h.Kubeclient.Status().Update(ctx, dd); err != nil {
+			logger.Error(err, "Failed to update status")
+			return fmt.Errorf("status update failed: %w", err)
+		}
+		logger.Info("Status updated successfully")
+	} else {
+		logger.Info("Status unchanged, skipping update")
 	}
 
-	// 返回聚合错误（如果有）
+	// Return aggregated errors (if any)
 	if len(aggregatedErrors) > 0 {
 		return fmt.Errorf("%d errors: %v", len(aggregatedErrors), aggregatedErrors)
 	}
 	return nil
+}
+
+// isStatusEqualIgnoringTime compares two DataDescriptorStatus objects while ignoring time fields
+func (h *DataDescriptorHandler) isStatusEqualIgnoringTime(oldStatus, newStatus dacv1alpha1.DataDescriptorStatus) bool {
+	// Compare OverallPhase
+	if oldStatus.OverallPhase != newStatus.OverallPhase {
+		return false
+	}
+
+	// Compare Conditions (ignoring LastTransitionTime)
+	if len(oldStatus.Conditions) != len(newStatus.Conditions) {
+		return false
+	}
+	for i := range oldStatus.Conditions {
+		oldCond := oldStatus.Conditions[i]
+		newCond := newStatus.Conditions[i]
+		if oldCond.Type != newCond.Type ||
+			oldCond.Status != newCond.Status ||
+			oldCond.Reason != newCond.Reason ||
+			oldCond.Message != newCond.Message {
+			return false
+		}
+	}
+
+	// Compare SourceStatuses (ignoring LastSyncTime)
+	if len(oldStatus.SourceStatuses) != len(newStatus.SourceStatuses) {
+		return false
+	}
+	for i := range oldStatus.SourceStatuses {
+		oldSource := oldStatus.SourceStatuses[i]
+		newSource := newStatus.SourceStatuses[i]
+		if oldSource.Name != newSource.Name ||
+			oldSource.Phase != newSource.Phase ||
+			oldSource.Records != newSource.Records ||
+			oldSource.TaskID != newSource.TaskID {
+			return false
+		}
+	}
+
+	// Compare ConsumedBy
+	if !reflect.DeepEqual(oldStatus.ConsumedBy, newStatus.ConsumedBy) {
+		return false
+	}
+
+	return true
 }
 
 func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source dacv1alpha1.DataSource, taskID string) SourceStatusResult {
@@ -267,7 +319,7 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		case "FAILED":
 			return SourceStatusResult{
 				Name:  source.Name,
-				Phase: "Error",
+				Phase: "FAILED",
 				Error: fmt.Errorf("task %s failed: %v", taskID, statusResp.Result),
 			}
 		case "PENDING":
@@ -279,7 +331,7 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		default: // running/queued or other statuses
 			return SourceStatusResult{
 				Name:   source.Name,
-				Phase:  "Pending",
+				Phase:  "PENDING",
 				TaskID: taskID,
 			}
 		}
