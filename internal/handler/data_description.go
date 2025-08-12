@@ -270,6 +270,12 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 				Phase: "Error",
 				Error: fmt.Errorf("task %s failed: %v", taskID, statusResp.Result),
 			}
+		case "PENDING":
+			return SourceStatusResult{
+				Name:   source.Name,
+				Phase:  "PENDING",
+				TaskID: taskID,
+			}
 		default: // running/queued or other statuses
 			return SourceStatusResult{
 				Name:   source.Name,

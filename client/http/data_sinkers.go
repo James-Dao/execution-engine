@@ -91,13 +91,31 @@ type TaskStatusResponse struct {
 	Result interface{} `json:"result"` // 使用 interface{} 接收任意类型结果
 }
 
-// 带重试的HTTP请求
+// 在 http/client.go 中修改 doRequestWithRetry 方法
 func (c *APIClient) doRequestWithRetry(req *http.Request) (*http.Response, error) {
 	var lastErr error
+	var body []byte
+
+	// 如果是POST/PUT等有body的请求，先读取body内容
+	if req.Method == "POST" || req.Method == "PUT" {
+		var err error
+		if req.Body != nil {
+			body, err = io.ReadAll(req.Body)
+			if err != nil {
+				return nil, fmt.Errorf("read request body failed: %v", err)
+			}
+			req.Body.Close()
+		}
+	}
 
 	for i := 0; i < c.cfg.MaxRetries; i++ {
 		if i > 0 {
 			time.Sleep(c.cfg.RetryDelay)
+		}
+
+		// 对于有body的请求，每次重试都需要重新设置body
+		if len(body) > 0 {
+			req.Body = io.NopCloser(bytes.NewBuffer(body))
 		}
 
 		resp, err := c.client.Do(req)
@@ -106,11 +124,9 @@ func (c *APIClient) doRequestWithRetry(req *http.Request) (*http.Response, error
 		}
 
 		lastErr = err
-		// 如果是超时错误或临时错误，可以重试
 		if isTimeoutError(err) || isTemporaryError(err) {
 			continue
 		}
-		// 其他错误不重试
 		break
 	}
 

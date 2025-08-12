@@ -9,6 +9,8 @@ data:
   password: YWRtaW4=
 
 ---
+
+
 apiVersion: dac.dac.io/v1alpha1
 kind: DataDescriptor
 metadata:
