@@ -26,6 +26,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"github.com/James-Dao/execution-engine/client/http"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/James-Dao/execution-engine/internal/handler"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -207,11 +208,14 @@ func main() {
 	// Create dataDescriptorHandler
 	k8sService := k8s.New(mgr.GetClient(), mgr.GetLogger().WithName("controller_k8s"))
 	dataDescriptorEventsCli := k8s.NewEvent(mgr.GetEventRecorderFor("DataDescriptor"), mgr.GetLogger().WithName("DataDescriptor"))
+	httpCfg := http.LoadConfig()
+	httpClient := http.NewAPIClient(httpCfg)
 	dataDescriptorHandler := &handler.DataDescriptorHandler{
 		K8sServices: k8sService,
 		EventsCli:   dataDescriptorEventsCli,
 		Kubeclient:  mgr.GetClient(),
 		Logger:      mgr.GetLogger().WithName("DataDescriptor"),
+		HTTPClient:  httpClient,
 	}
 
 	// Create dataAgentContainerHandler

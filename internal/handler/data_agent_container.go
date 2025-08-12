@@ -144,12 +144,3 @@ func (h *DataAgentContainerHandler) checkAgentStatus(ctx context.Context, dac *d
 		Phase: "Ready",
 	}
 }
-
-// GetAgentStatus gets the status of the agent for controller use.
-func (h *DataAgentContainerHandler) GetAgentStatus(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) dacv1alpha1.DataAgentContainerStatus {
-	result := h.checkAgentStatus(ctx, dac)
-	return dacv1alpha1.DataAgentContainerStatus{
-		Endpoint:              result.Endpoint,
-		ActiveDataDescriptors: result.ActiveDataDescriptors,
-	}
-}

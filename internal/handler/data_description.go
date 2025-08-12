@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
+	"github.com/James-Dao/execution-engine/client/http"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 )
 
 type DataDescriptorHandler struct {
@@ -19,6 +19,7 @@ type DataDescriptorHandler struct {
 	EventsCli   k8s.Event
 	Kubeclient  client.Client
 	Logger      logr.Logger
+	HTTPClient  *http.APIClient
 }
 
 // SourceStatusResult contains the result of checking a data source status
@@ -27,6 +28,7 @@ type SourceStatusResult struct {
 	Phase        string
 	LastSyncTime metav1.Time
 	Records      int64
+	TaskID       string
 	Error        error
 }
 
@@ -37,33 +39,64 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 	// handle dd logic
 	taskIDs, err := h.handleDD(ctx, dd)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to handle data descriptor: %w", err)
 	}
 
 	fmt.Println("taskIDs:", taskIDs)
 
 	// handle dd status
-	err = h.handleDDStatus(ctx, dd)
+	err = h.handleDDStatus(ctx, dd, taskIDs)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update status: %w", err)
 	}
 
 	return nil
 }
 
-func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.DataDescriptor) (map[string][]string, error) {
+func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.DataDescriptor) (map[string]string, error) {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
-	logger.Info("Processing DataDescriptor Logic")
+	logger.Info("Processing DataDescriptor sources")
 
-	// todo generate task ids for every source
-	taskIDs := map[string][]string{}
+	taskIDs := make(map[string]string)
 
-	fmt.Println("taskIDs:", taskIDs)
+	for _, source := range dd.Spec.Sources {
+		// 构建符合API要求的请求数据结构
+		requestData := map[string]interface{}{
+			"data": map[string]interface{}{
+				"source": map[string]interface{}{
+					"type":     source.Type,
+					"name":     source.Name,
+					"metadata": source.Metadata,
+				},
+				"descriptor": map[string]interface{}{
+					"name":      dd.Name,
+					"namespace": dd.Namespace,
+				},
+				"extract":        source.Extract,
+				"processing":     source.Processing,
+				"classification": source.Classification,
+			},
+		}
+
+		taskID, err := h.HTTPClient.TriggerTask(ctx, requestData)
+		if err != nil {
+			logger.Error(err, "Failed to trigger task for source",
+				"source", source.Name,
+				"requestData", requestData)
+			return nil, fmt.Errorf("failed to trigger task for source %s: %w", source.Name, err)
+		}
+
+		logger.Info("Successfully triggered task",
+			"source", source.Name,
+			"taskID", taskID,
+			"requestData", requestData)
+		taskIDs[source.Name] = taskID
+	}
 
 	return taskIDs, nil
 }
 
-func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor) error {
+func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor, taskIDs map[string]string) error {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
 	logger.Info("Processing DataDescriptor Status")
 
@@ -87,12 +120,17 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 
 	for i, source := range dd.Spec.Sources {
 		status := h.checkSourceStatus(ctx, source)
+
+		if taskID, exists := taskIDs[source.Name]; exists {
+			status.TaskID = taskID
+		}
+
 		sourceStatuses[i] = dacv1alpha1.SourceStatus{
 			Name:         source.Name,
 			Phase:        status.Phase,
 			LastSyncTime: status.LastSyncTime,
 			Records:      status.Records,
-			TaskID:       "",
+			TaskID:       status.TaskID,
 		}
 
 		if status.Error != nil || status.Phase != "Ready" {
@@ -128,6 +166,9 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 				eventMsg = fmt.Sprintf("%s: phase=%s", eventMsg, status.Phase)
 			}
 			h.EventsCli.Warning(dd, "SourceUnhealthy", eventMsg)
+		} else if status.TaskID != "" {
+			h.EventsCli.Normal(dd, "TaskTriggered",
+				fmt.Sprintf("Task %s triggered for source %s", status.TaskID, source.Name))
 		}
 	}
 
@@ -137,7 +178,7 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 		dd.Status.OverallPhase = "Ready"
 		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionAvailable, corev1.ConditionTrue, "Available", "All data sources healthy")
 		dd.Status.SetDataDescriptorCondition(*c)
-		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy")
+		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy and tasks triggered")
 	} else {
 		dd.Status.OverallPhase = "Error"
 		errorMsg := fmt.Sprintf("%d data sources have issues", len(aggregatedErrors))
@@ -248,16 +289,5 @@ func (h *DataDescriptorHandler) checkMinIOStatus(ctx context.Context, source dac
 		Phase:        "Ready",
 		LastSyncTime: metav1.NewTime(time.Now()),
 		Records:      200,
-	}
-}
-
-// GetSourceStatus gets the status of a specific data source (for controller use)
-func (h *DataDescriptorHandler) GetSourceStatus(ctx context.Context, source dacv1alpha1.DataSource) dacv1alpha1.SourceStatus {
-	result := h.checkSourceStatus(ctx, source)
-	return dacv1alpha1.SourceStatus{
-		Name:         source.Name,
-		Phase:        result.Phase,
-		LastSyncTime: result.LastSyncTime,
-		Records:      result.Records,
 	}
 }

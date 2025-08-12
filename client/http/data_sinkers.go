@@ -34,7 +34,7 @@ type Config struct {
 	RetryDelay  time.Duration
 }
 
-func loadConfig() Config {
+func LoadConfig() Config {
 	cfg := Config{
 		BaseURL:     defaultBaseURL,
 		HTTPTimeout: defaultHTTPTimeout,
@@ -212,7 +212,7 @@ func (c *APIClient) GetTaskStatus(ctx context.Context, taskID string) (*TaskStat
 
 func main() {
 	// 加载配置
-	cfg := loadConfig()
+	cfg := LoadConfig()
 	client := NewAPIClient(cfg)
 
 	// 创建带超时的上下文
