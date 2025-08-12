@@ -39,13 +39,11 @@ type AgentCard struct {
 
 // AgentSkill defines a specific skill the agent provides
 type AgentSkill struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Tags        []string  `json:"tags,omitempty"`
-	Examples    []string  `json:"examples,omitempty"`
-	InputModes  *[]string `json:"inputModes,omitempty"`
-	OutputModes *[]string `json:"outputModes,omitempty"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags,omitempty"`
+	Examples    []string `json:"examples,omitempty"`
 }
 
 // ModelSpec defines the LLM and embedding models to use

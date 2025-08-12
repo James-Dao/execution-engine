@@ -59,16 +59,8 @@ spec:
                           type: array
                         id:
                           type: string
-                        inputModes:
-                          items:
-                            type: string
-                          type: array
                         name:
                           type: string
-                        outputModes:
-                          items:
-                            type: string
-                          type: array
                         tags:
                           items:
                             type: string

@@ -23,8 +23,6 @@ spec:
           - "coder agent"
         examples:
           - "python , java ,golang"
-        inputModes: null
-        outputModes: null
   model:
     provider: "aliyun"
     llm: "qwen2-7b"
