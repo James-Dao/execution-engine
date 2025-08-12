@@ -149,6 +149,8 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 	allHealthy := true
 	var aggregatedErrors []error
 
+	var aggregatedNotReady []string
+
 	for i, source := range dd.Spec.Sources {
 		task := ""
 		if taskID, exists := taskIDs[source.Name]; exists {
@@ -181,15 +183,8 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 					"source", source.Name,
 					"phase", status.Phase,
 				)
+				aggregatedNotReady = append(aggregatedNotReady, source.Name)
 			}
-
-			eventMsg := fmt.Sprintf("Data source %s task check failed", source.Name)
-			if status.Error != nil {
-				eventMsg = fmt.Sprintf("%s: %v", eventMsg, status.Error)
-			} else {
-				eventMsg = fmt.Sprintf("%s: phase=%s", eventMsg, status.Phase)
-			}
-			h.EventsCli.Warning(dd, "SourceTaskNotReady", eventMsg)
 		} else {
 			h.EventsCli.Normal(dd, "TaskTriggered", fmt.Sprintf("Task %s Completed for data source %s", status.TaskID, source.Name))
 		}
@@ -204,7 +199,7 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 		h.EventsCli.Normal(dd, "AllSourcesHealthy", "All data sources healthy and tasks triggered and Completed.")
 	} else {
 		newStatus.OverallPhase = "NotReady"
-		errorMsg := fmt.Sprintf("%d data sources task have issues or not completed", len(aggregatedErrors))
+		errorMsg := fmt.Sprintf("%d data sources task not completed, %d data sources have issues ", len(aggregatedNotReady), len(aggregatedErrors))
 		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionFailed, corev1.ConditionTrue, "Degraded", errorMsg)
 		newStatus.SetDataDescriptorCondition(*c)
 		h.EventsCli.Warning(dd, "SomeSourcesTaskUnhealthy", errorMsg)
