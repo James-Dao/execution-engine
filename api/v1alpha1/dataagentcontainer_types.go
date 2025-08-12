@@ -27,24 +27,6 @@ import (
 type DataPolicy struct {
 	// Selector for data sources by name
 	SourceNameSelector []string `json:"sourceNameSelector,omitempty"`
-
-	// Selector for data sources by classification
-	// MatchClassifications []ClassificationMatch `json:"matchClassifications,omitempty"`
-}
-
-// ClassificationMatch defines how to match data sources by their classification
-type ClassificationMatch struct {
-	// Domain of the data
-	Domain string `json:"domain,omitempty"`
-
-	// Category of the data (can be string or array of strings)
-	Category []string `json:"category,omitempty"`
-
-	// Subcategory of the data
-	Subcategory string `json:"subcategory,omitempty"`
-
-	// Matching policy (exact/prefix/regex)
-	MatchPolicy string `json:"matchPolicy,omitempty"`
 }
 
 // AgentCard defines the agent's metadata and capabilities
