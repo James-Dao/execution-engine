@@ -76,13 +76,26 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	err = r.Handler.Do(ctx, instance)
-
 	if err != nil {
 		logger.Error(err, "DataDescriptor Handler err")
-		return ctrl.Result{RequeueAfter: requeueAfter}, err
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, err
 	}
 
-	return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	// 如果有任务未完成，稍后检查
+	if hasPendingSources(instance) {
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
+	return ctrl.Result{RequeueAfter: 30 * time.Minute}, nil
+}
+
+func hasPendingSources(dd *dacv1alpha1.DataDescriptor) bool {
+	for _, status := range dd.Status.SourceStatuses {
+		if status.Phase != "Ready" {
+			return true
+		}
+	}
+	return false
 }
 
 // SetupWithManager sets up the controller with the Manager.

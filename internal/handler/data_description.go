@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
@@ -42,7 +44,7 @@ func (h *DataDescriptorHandler) Do(ctx context.Context, dd *dacv1alpha1.DataDesc
 		return fmt.Errorf("failed to handle data descriptor: %w", err)
 	}
 
-	fmt.Println("taskIDs:", taskIDs)
+	logger.Info("taskIDs:", taskIDs)
 
 	// handle dd status
 	err = h.handleDDStatus(ctx, dd, taskIDs)
@@ -60,6 +62,18 @@ func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.Da
 	taskIDs := make(map[string]string)
 
 	for _, source := range dd.Spec.Sources {
+
+		// 检查是否已有有效任务
+		if existingStatus := h.getExistingSourceStatus(dd, source.Name); existingStatus != nil {
+			if existingStatus.TaskID != "" {
+				logger.Info("Skipping source with existing task",
+					"source", source.Name,
+					"taskID", existingStatus.TaskID)
+				taskIDs[source.Name] = existingStatus.TaskID
+				continue
+			}
+		}
+
 		// 构建符合API要求的请求数据结构
 		requestData := map[string]interface{}{
 			"data": map[string]interface{}{
@@ -96,6 +110,16 @@ func (h *DataDescriptorHandler) handleDD(ctx context.Context, dd *dacv1alpha1.Da
 	return taskIDs, nil
 }
 
+// 获取已有的 SourceStatus
+func (h *DataDescriptorHandler) getExistingSourceStatus(dd *dacv1alpha1.DataDescriptor, name string) *dacv1alpha1.SourceStatus {
+	for _, status := range dd.Status.SourceStatuses {
+		if status.Name == name {
+			return &status
+		}
+	}
+	return nil
+}
+
 func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alpha1.DataDescriptor, taskIDs map[string]string) error {
 	logger := h.Logger.WithValues("namespace", dd.Namespace, "name", dd.Name)
 	logger.Info("Processing DataDescriptor Status")
@@ -113,17 +137,18 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 		dd.Status.SetCreateCondition("Initializing data descriptor")
 	}
 
-	// 检查数据源状态
+	// 检查数据源状态以及同步状态到K8S cr对象的status中
 	sourceStatuses := make([]dacv1alpha1.SourceStatus, len(dd.Spec.Sources))
 	allHealthy := true
 	var aggregatedErrors []error
 
 	for i, source := range dd.Spec.Sources {
-		status := h.checkSourceStatus(ctx, source)
-
+		task := ""
 		if taskID, exists := taskIDs[source.Name]; exists {
-			status.TaskID = taskID
+			task = taskID
 		}
+
+		status := h.checkSourceStatus(ctx, source, task)
 
 		sourceStatuses[i] = dacv1alpha1.SourceStatus{
 			Name:         source.Name,
@@ -200,8 +225,66 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 	return nil
 }
 
-// checkSourceStatus checks the status of a single data source
-func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
+func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source dacv1alpha1.DataSource, taskID string) SourceStatusResult {
+	// 如果有 TaskID，检查任务状态
+	if taskID != "" {
+		statusResp, err := h.HTTPClient.GetTaskStatus(ctx, taskID)
+		if err != nil {
+			return SourceStatusResult{
+				Name:  source.Name,
+				Phase: "Error",
+				Error: fmt.Errorf("failed to check task status: %w", err),
+			}
+		}
+
+		// 根据任务状态返回结果
+		switch strings.ToUpper(statusResp.Status) { // Handle case insensitivity
+		case "SUCCESS":
+			// Parse the result string into a map
+			var resultMap map[string]interface{}
+			resultStr := strings.ReplaceAll(statusResp.Result.(string), "'", "\"") // Replace single quotes with double quotes for valid JSON
+			if err := json.Unmarshal([]byte(resultStr), &resultMap); err != nil {
+				return SourceStatusResult{
+					Name:  source.Name,
+					Phase: "Error",
+					Error: fmt.Errorf("failed to parse task result: %w", err),
+				}
+			}
+
+			// Get records count if available, default to 0
+			records := int64(0)
+			if processed, ok := resultMap["processed"].(bool); ok && processed {
+				records = 1 // Or whatever makes sense for your use case
+			}
+
+			return SourceStatusResult{
+				Name:         source.Name,
+				Phase:        "Ready",
+				LastSyncTime: metav1.Now(),
+				Records:      records,
+				TaskID:       taskID,
+			}
+		case "FAILED":
+			return SourceStatusResult{
+				Name:  source.Name,
+				Phase: "Error",
+				Error: fmt.Errorf("task %s failed: %v", taskID, statusResp.Result),
+			}
+		default: // running/queued or other statuses
+			return SourceStatusResult{
+				Name:   source.Name,
+				Phase:  "Pending",
+				TaskID: taskID,
+			}
+		}
+	}
+
+	// 无 TaskID 时的默认检查数据源的连通性
+	return h.checkDataSourceConnectivity(ctx, source)
+}
+
+// checkDataSourceConnectivity checks the Connectivy of a single data source
+func (h *DataDescriptorHandler) checkDataSourceConnectivity(ctx context.Context, source dacv1alpha1.DataSource) SourceStatusResult {
 	// Validate data source configuration
 	if source.Name == "" {
 		return SourceStatusResult{
