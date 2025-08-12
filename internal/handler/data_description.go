@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -288,30 +287,10 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		// 根据任务状态返回结果
 		switch strings.ToUpper(statusResp.Status) { // Handle case insensitivity
 		case "SUCCESS":
-			// Parse the result string into a map
-			var resultMap map[string]interface{}
-			resultStr := strings.ReplaceAll(statusResp.Result.(string), "'", "\"") // Replace single quotes with double quotes for valid JSON
-			if err := json.Unmarshal([]byte(resultStr), &resultMap); err != nil {
-				return SourceStatusResult{
-					Name:   source.Name,
-					Phase:  "FAILED",
-					TaskID: taskID,
-					Error:  fmt.Errorf("failed to parse task result: %w", err),
-				}
-			}
-
-			// Get records count if available, default to 0
-			records := int64(0)
-			if processed, ok := resultMap["processed"].(bool); ok && processed {
-				records = 1 // Or whatever makes sense for your use case
-			}
-
 			return SourceStatusResult{
-				Name:         source.Name,
-				Phase:        "Ready",
-				LastSyncTime: metav1.Now(),
-				Records:      records,
-				TaskID:       taskID,
+				Name:   source.Name,
+				Phase:  "Ready",
+				TaskID: taskID,
 			}
 		case "FAILED":
 			return SourceStatusResult{
