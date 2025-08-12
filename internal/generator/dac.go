@@ -2,6 +2,7 @@ package generator
 
 import (
 	"context"
+	"fmt"
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/go-logr/logr"
@@ -59,50 +60,44 @@ func (h *DataAgentContainerGenerator) generateDataAgentContainerServiceName(dac 
 	return ""
 }
 
-func (h *DataAgentContainerGenerator) generateExpertAgentEnvs(dac *dacv1alpha1.DataAgentContainer) []corev1.EnvVar {
+func (h *DataAgentContainerGenerator) generateExpertAgentEnvs(dac *dacv1alpha1.DataAgentContainer, serviceName string) []corev1.EnvVar {
 	envs := []corev1.EnvVar{}
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "Agent_Host",
-		Value: "10.64.0.74",
+		Value: serviceName,
 	})
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "Agent_Port",
-		Value: "20002",
-	})
-
-	envs = append(envs, corev1.EnvVar{
-		Name:  "AgentRegistry",
-		Value: "10.64.0.74:20000",
+		Value: "10101",
 	})
 
 	return envs
 }
 
-func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1alpha1.DataAgentContainer) []corev1.EnvVar {
+func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1alpha1.DataAgentContainer, serviceName string) []corev1.EnvVar {
 	envs := []corev1.EnvVar{}
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "Agent_Host",
-		Value: "10.64.0.74",
+		Value: serviceName,
 	})
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "Agent_Port",
-		Value: "20002",
+		Value: "10100",
 	})
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "AgentRegistry",
-		Value: "10.64.0.74:20000",
+		Value: "orchestrator-registry:10100",
 	})
 
 	return envs
 }
 
 func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
-
 	redisHost := "10.64.0.74"
 	redisPort := "6389"
 	redisDB := "0"
@@ -140,9 +135,131 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 	return cmds
 }
 
+func (h *DataAgentContainerGenerator) generateOrchestratorAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
+	cmName := fmt.Sprintf("%s-%s", dac.Name, "orchestrator-cm")
+	configFileName := "orchestrator_agent.json"
+	configFileContent := `{
+    "name": "OrchestratorAgent",
+    "description": "Orchestrates the task generation and execution",
+    "url": "http://192.168.3.66:20001/",
+    "provider": null,
+    "version": "1.0.0",
+    "documentationUrl": null,
+    "capabilities": {
+        "streaming": "True",
+        "pushNotifications": "True",
+        "stateTransitionHistory": "False"
+    },
+    "authentication": {
+        "credentials": null,
+        "schemes": [
+            "public"
+        ]
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "executor",
+            "name": "Task Executor",
+            "description": "Orchestrates the task generation and execution, takes help from the planner to generate tasks",
+            "tags": [
+                "execute plan"
+            ],
+            "examples": [
+                "Plan my trip to London, submit an expense report"
+            ],
+            "inputModes": null,
+            "outputModes": null
+        }
+    ]
+}`
+
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            cmName,
+			Namespace:       dac.Namespace,
+			OwnerReferences: ownerRefs,
+		},
+		Data: map[string]string{
+			configFileName: configFileContent,
+		},
+	}
+
+	return configMap
+}
+
+func (h *DataAgentContainerGenerator) generateExpertAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
+	cmName := fmt.Sprintf("%s-%s", dac.Name, "expert-cm")
+
+	configFileName := "agent_card.json"
+	configFileContent := `{
+    "name": "ExpertAgent",
+    "description": "answer user question using self knowledge",
+    "url": "http://10.64.0.74:20002/",
+    "provider": null,
+    "version": "1.0.0",
+    "documentationUrl": null,
+    "capabilities": {
+        "streaming": "True",
+        "pushNotifications": "True",
+        "stateTransitionHistory": "False"
+    },
+    "authentication": {
+        "credentials": null,
+        "schemes": [
+            "public"
+        ]
+    },
+    "defaultInputModes": [
+        "text",
+        "text/plain"
+    ],
+    "defaultOutputModes": [
+        "text",
+        "text/plain"
+    ],
+    "skills": [
+        {
+            "id": "answer-question",
+            "name": "Answer Question",
+            "description": "answer user question using self knowledge",
+            "tags": [
+                "expert agent"
+            ],
+            "examples": [
+                "1+1等于几"
+            ],
+            "inputModes": null,
+            "outputModes": null
+        }
+    ]
+}`
+
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            cmName,
+			Namespace:       dac.Namespace,
+			OwnerReferences: ownerRefs,
+		},
+		Data: map[string]string{
+			configFileName: configFileContent,
+		},
+	}
+
+	return configMap
+}
+
 func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *appsv1.Deployment {
 	name := ""
 
+	serviceName := "" //todo get service name
 	replicas := int32(1)
 	orchestratorAgentArgs := h.generateOrchestratorAgentArgs(dac)
 	expertAgentArgs := h.generateExpertAgentArgs(dac)
@@ -193,15 +310,15 @@ func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
-							Env: h.generateOrchestratorAgentEnvs(dac),
+							Env: h.generateOrchestratorAgentEnvs(dac, serviceName),
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("10m"),
-									corev1.ResourceMemory: resource.MustParse("32Mi"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("10m"),
-									corev1.ResourceMemory: resource.MustParse("32Mi"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
 								},
 							},
 						},
@@ -212,20 +329,20 @@ func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *
 							Args:            expertAgentArgs,
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "orchestrator-agent",
-									ContainerPort: 10100,
+									Name:          "expert-agent",
+									ContainerPort: 10101,
 									Protocol:      corev1.ProtocolTCP,
 								},
 							},
-							Env: h.generateExpertAgentEnvs(dac),
+							Env: h.generateExpertAgentEnvs(dac, serviceName),
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("10m"),
-									corev1.ResourceMemory: resource.MustParse("32Mi"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("10m"),
-									corev1.ResourceMemory: resource.MustParse("32Mi"),
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
 								},
 							},
 						},
