@@ -2,7 +2,6 @@ package generator
 
 import (
 	"context"
-	"fmt"
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/go-logr/logr"
@@ -32,7 +31,8 @@ func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.D
 
 func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *corev1.Service {
 	serviceName := h.generateDataAgentContainerServiceName(dac)
-	dacTargetPort := intstr.FromInt(10100)
+	orchestratorTargetPort := intstr.FromInt(10100)
+	dacTargetPort := intstr.FromInt(10101)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            serviceName,
@@ -46,6 +46,12 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dac
 			Ports: []corev1.ServicePort{
 				{
 					Port:       10100,
+					Protocol:   corev1.ProtocolTCP,
+					Name:       "orchestrator",
+					TargetPort: orchestratorTargetPort,
+				},
+				{
+					Port:       10101,
 					Protocol:   corev1.ProtocolTCP,
 					Name:       "dac",
 					TargetPort: dacTargetPort,
@@ -91,7 +97,7 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1al
 
 	envs = append(envs, corev1.EnvVar{
 		Name:  "AgentRegistry",
-		Value: "orchestrator-registry:10100",
+		Value: "expert-registry:10100",
 	})
 
 	return envs
@@ -135,126 +141,126 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 	return cmds
 }
 
-func (h *DataAgentContainerGenerator) generateOrchestratorAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
-	cmName := fmt.Sprintf("%s-%s", dac.Name, "orchestrator-cm")
-	configFileName := "orchestrator_agent.json"
-	configFileContent := `{
-    "name": "OrchestratorAgent",
-    "description": "Orchestrates the task generation and execution",
-    "url": "http://192.168.3.66:20001/",
-    "provider": null,
-    "version": "1.0.0",
-    "documentationUrl": null,
-    "capabilities": {
-        "streaming": "True",
-        "pushNotifications": "True",
-        "stateTransitionHistory": "False"
-    },
-    "authentication": {
-        "credentials": null,
-        "schemes": [
-            "public"
-        ]
-    },
-    "defaultInputModes": [
-        "text",
-        "text/plain"
-    ],
-    "defaultOutputModes": [
-        "text",
-        "text/plain"
-    ],
-    "skills": [
-        {
-            "id": "executor",
-            "name": "Task Executor",
-            "description": "Orchestrates the task generation and execution, takes help from the planner to generate tasks",
-            "tags": [
-                "execute plan"
-            ],
-            "examples": [
-                "Plan my trip to London, submit an expense report"
-            ],
-            "inputModes": null,
-            "outputModes": null
-        }
-    ]
-}`
+// func (h *DataAgentContainerGenerator) generateOrchestratorAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
+// 	cmName := fmt.Sprintf("%s-%s", dac.Name, "orchestrator-cm")
+// 	configFileName := "orchestrator_agent.json"
+// 	configFileContent := `{
+//     "name": "OrchestratorAgent",
+//     "description": "Orchestrates the task generation and execution",
+//     "url": "http://192.168.3.66:20001/",
+//     "provider": null,
+//     "version": "1.0.0",
+//     "documentationUrl": null,
+//     "capabilities": {
+//         "streaming": "True",
+//         "pushNotifications": "True",
+//         "stateTransitionHistory": "False"
+//     },
+//     "authentication": {
+//         "credentials": null,
+//         "schemes": [
+//             "public"
+//         ]
+//     },
+//     "defaultInputModes": [
+//         "text",
+//         "text/plain"
+//     ],
+//     "defaultOutputModes": [
+//         "text",
+//         "text/plain"
+//     ],
+//     "skills": [
+//         {
+//             "id": "executor",
+//             "name": "Task Executor",
+//             "description": "Orchestrates the task generation and execution, takes help from the planner to generate tasks",
+//             "tags": [
+//                 "execute plan"
+//             ],
+//             "examples": [
+//                 "Plan my trip to London, submit an expense report"
+//             ],
+//             "inputModes": null,
+//             "outputModes": null
+//         }
+//     ]
+// }`
 
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cmName,
-			Namespace:       dac.Namespace,
-			OwnerReferences: ownerRefs,
-		},
-		Data: map[string]string{
-			configFileName: configFileContent,
-		},
-	}
+// 	configMap := &corev1.ConfigMap{
+// 		ObjectMeta: metav1.ObjectMeta{
+// 			Name:            cmName,
+// 			Namespace:       dac.Namespace,
+// 			OwnerReferences: ownerRefs,
+// 		},
+// 		Data: map[string]string{
+// 			configFileName: configFileContent,
+// 		},
+// 	}
 
-	return configMap
-}
+// 	return configMap
+// }
 
-func (h *DataAgentContainerGenerator) generateExpertAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
-	cmName := fmt.Sprintf("%s-%s", dac.Name, "expert-cm")
+// func (h *DataAgentContainerGenerator) generateExpertAgentConfig(dac *dacv1alpha1.DataAgentContainer, ownerRefs []metav1.OwnerReference) *corev1.ConfigMap {
+// 	cmName := fmt.Sprintf("%s-%s", dac.Name, "expert-cm")
 
-	configFileName := "agent_card.json"
-	configFileContent := `{
-    "name": "ExpertAgent",
-    "description": "answer user question using self knowledge",
-    "url": "http://10.64.0.74:20002/",
-    "provider": null,
-    "version": "1.0.0",
-    "documentationUrl": null,
-    "capabilities": {
-        "streaming": "True",
-        "pushNotifications": "True",
-        "stateTransitionHistory": "False"
-    },
-    "authentication": {
-        "credentials": null,
-        "schemes": [
-            "public"
-        ]
-    },
-    "defaultInputModes": [
-        "text",
-        "text/plain"
-    ],
-    "defaultOutputModes": [
-        "text",
-        "text/plain"
-    ],
-    "skills": [
-        {
-            "id": "answer-question",
-            "name": "Answer Question",
-            "description": "answer user question using self knowledge",
-            "tags": [
-                "expert agent"
-            ],
-            "examples": [
-                "1+1等于几"
-            ],
-            "inputModes": null,
-            "outputModes": null
-        }
-    ]
-}`
+// 	configFileName := "agent_card.json"
+// 	configFileContent := `{
+//     "name": "ExpertAgent",
+//     "description": "answer user question using self knowledge",
+//     "url": "http://10.64.0.74:20002/",
+//     "provider": null,
+//     "version": "1.0.0",
+//     "documentationUrl": null,
+//     "capabilities": {
+//         "streaming": "True",
+//         "pushNotifications": "True",
+//         "stateTransitionHistory": "False"
+//     },
+//     "authentication": {
+//         "credentials": null,
+//         "schemes": [
+//             "public"
+//         ]
+//     },
+//     "defaultInputModes": [
+//         "text",
+//         "text/plain"
+//     ],
+//     "defaultOutputModes": [
+//         "text",
+//         "text/plain"
+//     ],
+//     "skills": [
+//         {
+//             "id": "answer-question",
+//             "name": "Answer Question",
+//             "description": "answer user question using self knowledge",
+//             "tags": [
+//                 "expert agent"
+//             ],
+//             "examples": [
+//                 "1+1等于几"
+//             ],
+//             "inputModes": null,
+//             "outputModes": null
+//         }
+//     ]
+// }`
 
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cmName,
-			Namespace:       dac.Namespace,
-			OwnerReferences: ownerRefs,
-		},
-		Data: map[string]string{
-			configFileName: configFileContent,
-		},
-	}
+// 	configMap := &corev1.ConfigMap{
+// 		ObjectMeta: metav1.ObjectMeta{
+// 			Name:            cmName,
+// 			Namespace:       dac.Namespace,
+// 			OwnerReferences: ownerRefs,
+// 		},
+// 		Data: map[string]string{
+// 			configFileName: configFileContent,
+// 		},
+// 	}
 
-	return configMap
-}
+// 	return configMap
+// }
 
 func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *appsv1.Deployment {
 	name := ""
@@ -273,8 +279,8 @@ func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *
 		}
 	}
 
-	orchestratorAgentImage := ""
-	expertAgentImage := ""
+	orchestratorAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/orchestrator-agent:v0.0.1-amd64"
+	expertAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/expert-agent:v0.0.1-amd64"
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
