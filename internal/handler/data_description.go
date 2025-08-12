@@ -278,9 +278,10 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		statusResp, err := h.HTTPClient.GetTaskStatus(ctx, taskID)
 		if err != nil {
 			return SourceStatusResult{
-				Name:  source.Name,
-				Phase: "Error",
-				Error: fmt.Errorf("failed to check task status: %w", err),
+				Name:   source.Name,
+				Phase:  "Error",
+				TaskID: taskID,
+				Error:  fmt.Errorf("failed to check task status: %w", err),
 			}
 		}
 
@@ -292,9 +293,10 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 			resultStr := strings.ReplaceAll(statusResp.Result.(string), "'", "\"") // Replace single quotes with double quotes for valid JSON
 			if err := json.Unmarshal([]byte(resultStr), &resultMap); err != nil {
 				return SourceStatusResult{
-					Name:  source.Name,
-					Phase: "Error",
-					Error: fmt.Errorf("failed to parse task result: %w", err),
+					Name:   source.Name,
+					Phase:  "FAILED",
+					TaskID: taskID,
+					Error:  fmt.Errorf("failed to parse task result: %w", err),
 				}
 			}
 
@@ -326,7 +328,7 @@ func (h *DataDescriptorHandler) checkSourceStatus(ctx context.Context, source da
 		default: // running/queued or other statuses
 			return SourceStatusResult{
 				Name:   source.Name,
-				Phase:  "PENDING",
+				Phase:  "OTHERS",
 				TaskID: taskID,
 			}
 		}
