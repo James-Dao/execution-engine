@@ -86,7 +86,7 @@ func (r *DataDescriptorReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	return ctrl.Result{RequeueAfter: 30 * time.Minute}, nil
+	return ctrl.Result{}, nil
 }
 
 func hasPendingSources(dd *dacv1alpha1.DataDescriptor) bool {
