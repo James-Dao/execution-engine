@@ -2,6 +2,7 @@ package generator
 
 import (
 	"context"
+	"fmt"
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/go-logr/logr"
@@ -63,7 +64,8 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dac
 }
 
 func (h *DataAgentContainerGenerator) generateDataAgentContainerServiceName(dac *dacv1alpha1.DataAgentContainer) string {
-	return ""
+	serviceName := fmt.Sprintf("%s-%s", dac.Name, "service")
+	return serviceName
 }
 
 func (h *DataAgentContainerGenerator) generateExpertAgentEnvs(dac *dacv1alpha1.DataAgentContainer, serviceName string) []corev1.EnvVar {
@@ -262,12 +264,24 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 // 	return configMap
 // }
 
-func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *appsv1.Deployment {
-	name := ""
+func (h *DataAgentContainerGenerator) generateDataAgentContainerDeploymentName(dac *dacv1alpha1.DataAgentContainer) string {
+	deploymentName := fmt.Sprintf("%s-%s", dac.Name, "deployment")
+	return deploymentName
+}
 
-	serviceName := "" //todo get service name
+func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *appsv1.Deployment {
+
+	orchestratorAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/orchestrator-agent:v0.0.1-amd64"
+	expertAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/expert-agent:v0.0.1-amd64"
+
+	name := h.generateDataAgentContainerDeploymentName(dac)
+
+	serviceName := h.generateDataAgentContainerServiceName(dac)
+
 	replicas := int32(1)
+
 	orchestratorAgentArgs := h.generateOrchestratorAgentArgs(dac)
+
 	expertAgentArgs := h.generateExpertAgentArgs(dac)
 
 	var imagePullSecrets []corev1.LocalObjectReference
@@ -278,9 +292,6 @@ func (h *DataAgentContainerGenerator) generateDataAgentContainerDeployment(dac *
 			{Name: secretName},
 		}
 	}
-
-	orchestratorAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/orchestrator-agent:v0.0.1-amd64"
-	expertAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/expert-agent:v0.0.1-amd64"
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

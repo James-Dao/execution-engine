@@ -34,23 +34,6 @@ spec:
     name: "Coder Agent"
     description: "help user with writing code according to requirements"
     url: "http://192.168.3.25:20003/"
-    provider: null
-    version: "1.0.0"
-    documentationUrl: null
-    capabilities:
-      streaming: "True"
-      pushNotifications: "True"
-      stateTransitionHistory: "False"
-    authentication:
-      credentials: null
-      schemes:
-        - "public"
-    defaultInputModes:
-      - "text"
-      - "text/plain"
-    defaultOutputModes:
-      - "text"
-      - "text/plain"
     skills:
       - id: "coder"
         name: "Coder"

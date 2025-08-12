@@ -43,49 +43,9 @@ spec:
               agentCard:
                 description: AgentCard defines the agent's metadata and capabilities
                 properties:
-                  authentication:
-                    description: AgentAuth defines authentication schemes for the
-                      agent
-                    properties:
-                      credentials:
-                        type: string
-                      schemes:
-                        items:
-                          type: string
-                        type: array
-                    required:
-                    - schemes
-                    type: object
-                  capabilities:
-                    description: AgentCapabilities defines what capabilities the agent
-                      supports
-                    properties:
-                      pushNotifications:
-                        type: string
-                      stateTransitionHistory:
-                        type: string
-                      streaming:
-                        type: string
-                    required:
-                    - pushNotifications
-                    - stateTransitionHistory
-                    - streaming
-                    type: object
-                  defaultInputModes:
-                    items:
-                      type: string
-                    type: array
-                  defaultOutputModes:
-                    items:
-                      type: string
-                    type: array
                   description:
                     type: string
-                  documentationUrl:
-                    type: string
                   name:
-                    type: string
-                  provider:
                     type: string
                   skills:
                     items:
@@ -121,18 +81,11 @@ spec:
                     type: array
                   url:
                     type: string
-                  version:
-                    type: string
                 required:
-                - authentication
-                - capabilities
-                - defaultInputModes
-                - defaultOutputModes
                 - description
                 - name
                 - skills
                 - url
-                - version
                 type: object
               dataPolicy:
                 description: DataPolicy defines how data sources should be selected

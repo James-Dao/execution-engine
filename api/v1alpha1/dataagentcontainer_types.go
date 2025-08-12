@@ -49,30 +49,10 @@ type ClassificationMatch struct {
 
 // AgentCard defines the agent's metadata and capabilities
 type AgentCard struct {
-	Name               string            `json:"name"`
-	Description        string            `json:"description"`
-	URL                string            `json:"url"`
-	Provider           *string           `json:"provider,omitempty"`
-	Version            string            `json:"version"`
-	DocumentationURL   *string           `json:"documentationUrl,omitempty"`
-	Capabilities       AgentCapabilities `json:"capabilities"`
-	Authentication     AgentAuth         `json:"authentication"`
-	DefaultInputModes  []string          `json:"defaultInputModes"`
-	DefaultOutputModes []string          `json:"defaultOutputModes"`
-	Skills             []AgentSkill      `json:"skills"`
-}
-
-// AgentCapabilities defines what capabilities the agent supports
-type AgentCapabilities struct {
-	Streaming              string `json:"streaming"`
-	PushNotifications      string `json:"pushNotifications"`
-	StateTransitionHistory string `json:"stateTransitionHistory"`
-}
-
-// AgentAuth defines authentication schemes for the agent
-type AgentAuth struct {
-	Credentials *string  `json:"credentials,omitempty"`
-	Schemes     []string `json:"schemes"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	URL         string       `json:"url"`
+	Skills      []AgentSkill `json:"skills"`
 }
 
 // AgentSkill defines a specific skill the agent provides
