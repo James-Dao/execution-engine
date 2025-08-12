@@ -200,9 +200,9 @@ func (h *DataDescriptorHandler) handleDDStatus(ctx context.Context, dd *dacv1alp
 	} else {
 		newStatus.OverallPhase = "NotReady"
 		errorMsg := fmt.Sprintf("%d data sources task not completed, %d data sources have issues ", len(aggregatedNotReady), len(aggregatedErrors))
-		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionFailed, corev1.ConditionTrue, "Degraded", errorMsg)
+		c := dacv1alpha1.NewCondition(dacv1alpha1.ConditionNotReady, corev1.ConditionTrue, "NotReady", errorMsg)
 		newStatus.SetDataDescriptorCondition(*c)
-		h.EventsCli.Warning(dd, "SomeSourcesTaskUnhealthy", errorMsg)
+		h.EventsCli.Warning(dd, "SomeSourcesTaskErrorOrNotReady", errorMsg)
 	}
 
 	// Compare the new status with original, ignoring time fields

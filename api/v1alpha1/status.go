@@ -19,6 +19,7 @@ const (
 	ConditionRecovering         ConditionType = "Recovering"
 	ConditionUpdating           ConditionType = "Updating"
 	ConditionFailed             ConditionType = "Failed"
+	ConditionNotReady           ConditionType = "NotReady"
 )
 
 // Condition saves the state information of the cr
