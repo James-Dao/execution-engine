@@ -42,6 +42,7 @@ import (
 
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/internal/controller"
+	"github.com/James-Dao/execution-engine/internal/generator"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -220,11 +221,17 @@ func main() {
 
 	// Create dataAgentContainerHandler
 	dataAgentContainerEventsCli := k8s.NewEvent(mgr.GetEventRecorderFor("DataAgentContainer"), mgr.GetLogger().WithName("DataAgentContainer"))
-	dataAgentContainerHandler := &handler.DataAgentContainerHandler{
+	dataAgentContainerGenerator := &generator.DataAgentContainerGenerator{
 		K8sServices: k8sService,
-		EventsCli:   dataAgentContainerEventsCli,
-		Kubeclient:  mgr.GetClient(),
-		Logger:      mgr.GetLogger().WithName("DataAgentContainer"),
+		Logger:      mgr.GetLogger().WithName("DataAgentContainerGenerator"),
+	}
+
+	dataAgentContainerHandler := &handler.DataAgentContainerHandler{
+		K8sServices:  k8sService,
+		EventsCli:    dataAgentContainerEventsCli,
+		Kubeclient:   mgr.GetClient(),
+		Logger:       mgr.GetLogger().WithName("DataAgentContainer"),
+		DACGenerator: dataAgentContainerGenerator,
 	}
 
 	if err := (&controller.DataDescriptorReconciler{

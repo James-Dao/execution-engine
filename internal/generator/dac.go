@@ -12,14 +12,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DataAgentContainerHandler handles the reconciliation logic for DataAgentContainer resources.
 type DataAgentContainerGenerator struct {
 	K8sServices k8s.Services
-	EventsCli   k8s.Event
-	Kubeclient  client.Client
 	Logger      logr.Logger
 }
 
@@ -42,9 +39,17 @@ func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.D
 		},
 	}
 
-	h.GenerateDataAgentContainerService(dac, labels, ownerRefs)
+	service := h.GenerateDataAgentContainerService(dac, labels, ownerRefs)
+	err := h.K8sServices.CreateService(dac.Namespace, service)
+	if err != nil {
+		return err
+	}
 
-	h.GenerateDataAgentContainerDeployment(dac, labels, ownerRefs)
+	deployment := h.GenerateDataAgentContainerDeployment(dac, labels, ownerRefs)
+	err = h.K8sServices.CreateDeployment(dac.Namespace, deployment)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -5,20 +5,21 @@ import (
 	"fmt"
 	"time"
 
+	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/client/k8s"
+	"github.com/James-Dao/execution-engine/internal/generator"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 )
 
 // DataAgentContainerHandler handles the reconciliation logic for DataAgentContainer resources.
 type DataAgentContainerHandler struct {
-	K8sServices k8s.Services
-	EventsCli   k8s.Event
-	Kubeclient  client.Client
-	Logger      logr.Logger
+	K8sServices  k8s.Services
+	EventsCli    k8s.Event
+	Kubeclient   client.Client
+	Logger       logr.Logger
+	DACGenerator *generator.DataAgentContainerGenerator
 }
 
 // AgentStatusResult contains the result of checking agent status
