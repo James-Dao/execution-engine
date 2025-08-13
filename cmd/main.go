@@ -223,6 +223,7 @@ func main() {
 	dataAgentContainerEventsCli := k8s.NewEvent(mgr.GetEventRecorderFor("DataAgentContainer"), mgr.GetLogger().WithName("DataAgentContainer"))
 	dataAgentContainerGenerator := &generator.DataAgentContainerGenerator{
 		K8sServices: k8sService,
+		Kubeclient:  mgr.GetClient(),
 		Logger:      mgr.GetLogger().WithName("DataAgentContainerGenerator"),
 	}
 

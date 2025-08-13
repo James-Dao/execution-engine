@@ -12,11 +12,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DataAgentContainerHandler handles the reconciliation logic for DataAgentContainer resources.
 type DataAgentContainerGenerator struct {
 	K8sServices k8s.Services
+	Kubeclient  client.Client
 	Logger      logr.Logger
 }
 
