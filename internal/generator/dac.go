@@ -132,8 +132,8 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1al
 }
 
 func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
-	redisHost := "10.64.0.74"
-	redisPort := "6389"
+	redisHost := "redis-server"
+	redisPort := "6379"
 	redisDB := "0"
 	password := "123"
 
@@ -151,8 +151,8 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1al
 }
 
 func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
-	redisHost := "10.64.0.74"
-	redisPort := "6389"
+	redisHost := "redis-server"
+	redisPort := "6379"
 	redisDB := "1"
 	password := "123"
 
