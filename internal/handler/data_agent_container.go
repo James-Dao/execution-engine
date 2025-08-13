@@ -53,6 +53,11 @@ func (h *DataAgentContainerHandler) handleDAC(ctx context.Context, dac *dacv1alp
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Processing DataAgentContainer Logic")
 
+	err := h.DACGenerator.Do(ctx, dac)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
