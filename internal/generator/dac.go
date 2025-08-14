@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"os"
+	// "os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -189,14 +189,15 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 
 	expertAgentArgs := h.generateExpertAgentArgs(dac)
 
-	var imagePullSecrets []corev1.LocalObjectReference
+	// todo handle private image PullSecrets
+	// var imagePullSecrets []corev1.LocalObjectReference
 
-	secretName := os.Getenv("IMAGE_PULL_SECRET")
-	if secretName != "" {
-		imagePullSecrets = []corev1.LocalObjectReference{
-			{Name: secretName},
-		}
-	}
+	// secretName := os.Getenv("IMAGE_PULL_SECRET")
+	// if secretName != "" {
+	// 	imagePullSecrets = []corev1.LocalObjectReference{
+	// 		{Name: secretName},
+	// 	}
+	// }
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -218,7 +219,7 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					ImagePullSecrets: imagePullSecrets,
+					// ImagePullSecrets: imagePullSecrets,
 					Containers: []corev1.Container{
 						{
 							Name:            "orchestrator",

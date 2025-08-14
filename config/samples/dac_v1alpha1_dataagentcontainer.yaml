@@ -9,7 +9,6 @@ metadata:
 spec:
   dataPolicy:
     selector:
-      # 可以按数据源名称选择
       sourceNameSelector: ["dd-0"]
   agentCard:
     name: "Coder Agent"
