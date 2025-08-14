@@ -221,13 +221,13 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 					ImagePullSecrets: imagePullSecrets,
 					Containers: []corev1.Container{
 						{
-							Name:            "orchestrator-agent",
+							Name:            "orchestrator",
 							Image:           orchestratorAgentImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Args:            orchestratorAgentArgs,
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "orchestrator-agent",
+									Name:          "orchestrator",
 									ContainerPort: 10100,
 									Protocol:      corev1.ProtocolTCP,
 								},
@@ -245,13 +245,13 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 							},
 						},
 						{
-							Name:            "expert-agent",
+							Name:            "expert",
 							Image:           expertAgentImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Args:            expertAgentArgs,
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "expert-agent",
+									Name:          "expert",
 									ContainerPort: 10101,
 									Protocol:      corev1.ProtocolTCP,
 								},
