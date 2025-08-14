@@ -233,6 +233,7 @@ func (h *DataAgentContainerHandler) checkDACStatus(ctx context.Context, dac *dac
 	}
 
 	// 如果service和deployment都创建了，就开始检查service是不是健康的（可以使用A2A的client去发送一个简单的请求）如果不是健康的，就设置Phase 为Starting
+	// https://github.com/a2aproject/a2a-go/
 	if false {
 		phase = "Starting"
 		return AgentStatusResult{
