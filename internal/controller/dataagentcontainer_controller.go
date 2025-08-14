@@ -82,7 +82,7 @@ func (r *DataAgentContainerReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	err = r.Handler.Do(ctx, instance)
 	if err != nil {
-		logger.Error(err, "DataAgentContainer Handler err: ", err)
+		logger.Error(err, "DataAgentContainer Handler err")
 		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
