@@ -2,15 +2,16 @@ package handler
 
 import (
 	"context"
-	"fmt"
-	"time"
 
+	"fmt"
 	dacv1alpha1 "github.com/James-Dao/execution-engine/api/v1alpha1"
 	"github.com/James-Dao/execution-engine/client/k8s"
 	"github.com/James-Dao/execution-engine/internal/generator"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 // DataAgentContainerHandler handles the reconciliation logic for DataAgentContainer resources.
@@ -52,6 +53,18 @@ func (h *DataAgentContainerHandler) Do(ctx context.Context, dac *dacv1alpha1.Dat
 func (h *DataAgentContainerHandler) handleDAC(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) error {
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Processing DataAgentContainer Logic")
+
+	// todo check service and deployment is exist
+
+	exist := h.checkK8SServiceExist(dac)
+	if exist {
+		return nil
+	}
+
+	exist = h.checkK8SDeploymentExist(dac)
+	if exist {
+		return nil
+	}
 
 	err := h.DACGenerator.Do(ctx, dac)
 	if err != nil {
@@ -124,6 +137,31 @@ func (h *DataAgentContainerHandler) handleDACStatus(ctx context.Context, dac *da
 	}
 
 	return nil
+}
+
+func (h *DataAgentContainerHandler) checkK8SServiceExist(dac *dacv1alpha1.DataAgentContainer) bool {
+	serviceName := h.DACGenerator.GenerateDataAgentContainerServiceName(dac)
+	if _, err := h.K8sServices.GetService(dac.Namespace, serviceName); err != nil {
+		if errors.IsNotFound(err) {
+			return false
+		}
+		return false
+	}
+	return true
+}
+
+func (h *DataAgentContainerHandler) checkK8SDeploymentExist(dac *dacv1alpha1.DataAgentContainer) bool {
+	deploymentName := h.DACGenerator.GenerateDataAgentContainerDeploymentName(dac)
+	_, err := h.K8sServices.GetDeployment(dac.Namespace, deploymentName)
+	if err != nil {
+		// If no resource we need to create.
+		if errors.IsNotFound(err) {
+			return false
+		}
+		return false
+	}
+
+	return true
 }
 
 // checkAgentStatus checks the current status of the agent.

@@ -57,7 +57,7 @@ func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.D
 }
 
 func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *corev1.Service {
-	serviceName := h.generateDataAgentContainerServiceName(dac)
+	serviceName := h.GenerateDataAgentContainerServiceName(dac)
 	orchestratorTargetPort := intstr.FromInt(10100)
 	dacTargetPort := intstr.FromInt(10101)
 	return &corev1.Service{
@@ -89,7 +89,7 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dac
 	}
 }
 
-func (h *DataAgentContainerGenerator) generateDataAgentContainerServiceName(dac *dacv1alpha1.DataAgentContainer) string {
+func (h *DataAgentContainerGenerator) GenerateDataAgentContainerServiceName(dac *dacv1alpha1.DataAgentContainer) string {
 	serviceName := fmt.Sprintf("%s-%s", dac.Name, "service")
 	return serviceName
 }
@@ -175,7 +175,7 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 	return cmds
 }
 
-func (h *DataAgentContainerGenerator) generateDataAgentContainerDeploymentName(dac *dacv1alpha1.DataAgentContainer) string {
+func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeploymentName(dac *dacv1alpha1.DataAgentContainer) string {
 	deploymentName := fmt.Sprintf("%s-%s", dac.Name, "deployment")
 	return deploymentName
 }
@@ -185,9 +185,9 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 	orchestratorAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/orchestrator-agent:v0.0.1-amd64"
 	expertAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/expert-agent:v0.0.1-amd64"
 
-	name := h.generateDataAgentContainerDeploymentName(dac)
+	name := h.GenerateDataAgentContainerDeploymentName(dac)
 
-	serviceName := h.generateDataAgentContainerServiceName(dac)
+	serviceName := h.GenerateDataAgentContainerServiceName(dac)
 
 	replicas := int32(1)
 
