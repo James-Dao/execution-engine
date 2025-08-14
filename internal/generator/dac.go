@@ -244,11 +244,11 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("100Mi"),
+									corev1.ResourceMemory: resource.MustParse("2000Mi"),
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("100Mi"),
+									corev1.ResourceMemory: resource.MustParse("1000Mi"),
 								},
 							},
 						},
@@ -269,11 +269,11 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("100Mi"),
+									corev1.ResourceMemory: resource.MustParse("2000Mi"),
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("100Mi"),
+									corev1.ResourceMemory: resource.MustParse("1000Mi"),
 								},
 							},
 						},
