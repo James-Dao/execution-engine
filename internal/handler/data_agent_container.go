@@ -202,9 +202,7 @@ func (h *DataAgentContainerHandler) checkDACStatus(ctx context.Context, dac *dac
 	endpoint := fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, dac.Namespace)
 	activeDataDescriptor := h.generateActiveDataDescriptors(dac)
 
-	// 检查service和deployment是不是正常创建了，如果没有创建就设置Phase 为 creating
 	serviceExist := h.checkK8SServiceExist(dac)
-	// 如果service不存在
 	if !serviceExist {
 		phase := "FAILED"
 		return AgentStatusResult{
@@ -219,7 +217,6 @@ func (h *DataAgentContainerHandler) checkDACStatus(ctx context.Context, dac *dac
 		}
 	}
 
-	// 如果deployment不存在
 	deploymentExist := h.checkK8SDeploymentExist(dac)
 	if !deploymentExist {
 		phase := "FAILED"
@@ -235,18 +232,31 @@ func (h *DataAgentContainerHandler) checkDACStatus(ctx context.Context, dac *dac
 		}
 	}
 
-	// 如果都创建了，就开始call service的地址，检查service是不是健康的，如果不是健康的，就设置Phase 为Starting
-
-	// 如果一切正常的话就返回下面的result, 就设置Phase 为Ready
-	return AgentStatusResult{
-		Endpoint: dacv1alpha1.Endpoint{
-			Address:  endpoint,
-			Port:     10100,
-			Protocol: "sse",
-		},
-		ActiveDataDescriptors: activeDataDescriptor,
-		Phase:                 phase,
+	// 如果service和deployment都创建了，就开始检查service是不是健康的（可以使用A2A的client去发送一个简单的请求）如果不是健康的，就设置Phase 为Starting
+	if false {
+		phase = "Starting"
+		return AgentStatusResult{
+			Endpoint: dacv1alpha1.Endpoint{
+				Address:  endpoint,
+				Port:     10100,
+				Protocol: "sse",
+			},
+			ActiveDataDescriptors: activeDataDescriptor,
+			Phase:                 phase,
+		}
+	} else {
+		// 如果service的服务正常了, 就设置Phase 为Ready
+		return AgentStatusResult{
+			Endpoint: dacv1alpha1.Endpoint{
+				Address:  endpoint,
+				Port:     10100,
+				Protocol: "sse",
+			},
+			ActiveDataDescriptors: activeDataDescriptor,
+			Phase:                 phase,
+		}
 	}
+
 }
 
 // isStatusEqualIgnoringTime compares two DataAgentContainerStatus objects while ignoring time fields
