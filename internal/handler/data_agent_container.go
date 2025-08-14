@@ -56,13 +56,11 @@ func (h *DataAgentContainerHandler) handleDAC(ctx context.Context, dac *dacv1alp
 
 	// todo check service and deployment is exist
 
-	exist := h.checkK8SServiceExist(dac)
-	if exist {
-		return nil
-	}
+	serviceExist := h.checkK8SServiceExist(dac)
 
-	exist = h.checkK8SDeploymentExist(dac)
-	if exist {
+	deploymentExist := h.checkK8SDeploymentExist(dac)
+
+	if serviceExist && deploymentExist {
 		return nil
 	}
 
