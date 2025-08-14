@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -42,15 +43,27 @@ func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.D
 	}
 
 	service := h.GenerateDataAgentContainerService(dac, labels, ownerRefs)
-	err := h.K8sServices.CreateService(dac.Namespace, service)
-	if err != nil {
-		return err
+	serviceName := h.GenerateDataAgentContainerServiceName(dac)
+	if _, err := h.K8sServices.GetService(dac.Namespace, serviceName); err != nil {
+		// If no resource we need to create.
+		if errors.IsNotFound(err) {
+			err := h.K8sServices.CreateService(dac.Namespace, service)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	deployment := h.GenerateDataAgentContainerDeployment(dac, labels, ownerRefs)
-	err = h.K8sServices.CreateDeployment(dac.Namespace, deployment)
-	if err != nil {
-		return err
+	deploymentName := h.GenerateDataAgentContainerDeploymentName(dac)
+	if _, err := h.K8sServices.GetDeployment(dac.Namespace, deploymentName); err != nil {
+		// If no resource we need to create.
+		if errors.IsNotFound(err) {
+			err = h.K8sServices.CreateDeployment(dac.Namespace, deployment)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
