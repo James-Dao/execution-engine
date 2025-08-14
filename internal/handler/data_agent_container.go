@@ -54,16 +54,7 @@ func (h *DataAgentContainerHandler) handleDAC(ctx context.Context, dac *dacv1alp
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Processing DataAgentContainer Logic")
 
-	// todo check service and deployment is exist
-
-	serviceExist := h.checkK8SServiceExist(dac)
-
-	deploymentExist := h.checkK8SDeploymentExist(dac)
-
-	if serviceExist && deploymentExist {
-		return nil
-	}
-
+	// if service or deployment not exist, will create them. if service or deployment exist, do nothing.
 	err := h.DACGenerator.Do(ctx, dac)
 	if err != nil {
 		return err
@@ -77,21 +68,33 @@ func (h *DataAgentContainerHandler) handleDACStatus(ctx context.Context, dac *da
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Processing DataAgentContainer Status")
 
-	// Initialize status fields if needed
-	if dac.Status.Conditions == nil {
-		dac.Status.Conditions = make([]dacv1alpha1.Condition, 0)
+	// Save the original status for comparison later
+	originalStatus := dac.Status.DeepCopy()
+
+	// Initialize Status if needed
+	newStatus := dacv1alpha1.DataAgentContainerStatus{
+		Conditions:            make([]dacv1alpha1.Condition, 0),
+		ActiveDataDescriptors: make([]dacv1alpha1.ActiveDataDescriptor, 0),
+		Endpoint:              dac.Status.Endpoint,
 	}
-	if dac.Status.ActiveDataDescriptors == nil {
-		dac.Status.ActiveDataDescriptors = make([]dacv1alpha1.ActiveDataDescriptor, 0)
+
+	// Copy existing conditions if they exist
+	if dac.Status.Conditions != nil {
+		newStatus.Conditions = append(newStatus.Conditions, dac.Status.Conditions...)
+	}
+
+	// Copy active data descriptors if they exist
+	if dac.Status.ActiveDataDescriptors != nil {
+		newStatus.ActiveDataDescriptors = append(newStatus.ActiveDataDescriptors, dac.Status.ActiveDataDescriptors...)
 	}
 
 	// Set creating condition if this is a new resource
 	if dac.Status.Endpoint.Address == "" {
-		dac.Status.SetCreateCondition("Initializing DataAgentContainer")
+		newStatus.SetCreateCondition("Initializing DataAgentContainer")
 	}
 
 	// Check agent status
-	status := h.checkAgentStatus(ctx, dac)
+	status := h.checkDACStatus(ctx, dac)
 
 	// Update status based on check results
 	if status.Error != nil {
@@ -105,11 +108,11 @@ func (h *DataAgentContainerHandler) handleDACStatus(ctx context.Context, dac *da
 			"CheckFailed",
 			fmt.Sprintf("Agent status check failed: %v", status.Error),
 		)
-		dac.Status.SetDataAgentContainerCondition(*c)
+		newStatus.SetDataAgentContainerCondition(*c)
 	} else {
 		// Update successful status
-		dac.Status.Endpoint = status.Endpoint
-		dac.Status.ActiveDataDescriptors = status.ActiveDataDescriptors
+		newStatus.Endpoint = status.Endpoint
+		newStatus.ActiveDataDescriptors = status.ActiveDataDescriptors
 
 		c := dacv1alpha1.NewCondition(
 			dacv1alpha1.ConditionAvailable,
@@ -117,17 +120,26 @@ func (h *DataAgentContainerHandler) handleDACStatus(ctx context.Context, dac *da
 			"Healthy",
 			"Agent is healthy and ready",
 		)
-		dac.Status.SetDataAgentContainerCondition(*c)
+		newStatus.SetDataAgentContainerCondition(*c)
 		h.EventsCli.Normal(dac, "AgentHealthy", "Agent is healthy")
 	}
 
 	// Sort conditions by time
-	dac.Status.DescConditionsByTime()
+	newStatus.DescConditionsByTime()
 
-	// Update the status in Kubernetes
-	if err := h.Kubeclient.Status().Update(ctx, dac); err != nil {
-		logger.Error(err, "Failed to update DataAgentContainer status")
-		return fmt.Errorf("failed to update status: %w", err)
+	// Compare the new status with original, ignoring time fields if needed
+	if !h.isStatusEqualIgnoringTime(*originalStatus, newStatus) {
+		// Update the status in the original object
+		dac.Status = newStatus
+
+		// Update the status in Kubernetes
+		if err := h.Kubeclient.Status().Update(ctx, dac); err != nil {
+			logger.Error(err, "Failed to update DataAgentContainer status")
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+		logger.Info("Status updated successfully")
+	} else {
+		logger.Info("Status unchanged, skipping update")
 	}
 
 	if status.Error != nil {
@@ -158,31 +170,121 @@ func (h *DataAgentContainerHandler) checkK8SDeploymentExist(dac *dacv1alpha1.Dat
 		}
 		return false
 	}
-
 	return true
 }
 
-// checkAgentStatus checks the current status of the agent.
-func (h *DataAgentContainerHandler) checkAgentStatus(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) AgentStatusResult {
-	// In a real implementation, this would:
-	// 1. Verify agent endpoint connectivity
-	// 2. Check active data descriptors
-	// 3. Validate agent capabilities
+func (h *DataAgentContainerHandler) generateActiveDataDescriptors(dac *dacv1alpha1.DataAgentContainer) []dacv1alpha1.ActiveDataDescriptor {
+	if dac == nil || len(dac.Spec.DataPolicy.SourceNameSelector) == 0 {
+		return nil
+	}
 
-	// Mock implementation - assume agent is ready
+	var activeDescriptors []dacv1alpha1.ActiveDataDescriptor
+	currentTime := time.Now().Format(time.RFC3339)
+
+	for _, sourceName := range dac.Spec.DataPolicy.SourceNameSelector {
+		descriptor := dacv1alpha1.ActiveDataDescriptor{
+			Name:       sourceName,    // 使用 sourceNameSelector 的每个元素作为 Name
+			Namespace:  dac.Namespace, // 使用 DataAgentContainer 的 Namespace
+			LastSynced: currentTime,   // 使用当前时间
+		}
+		activeDescriptors = append(activeDescriptors, descriptor)
+	}
+
+	return activeDescriptors
+}
+
+// checkAgentStatus checks the current status of the agent.
+func (h *DataAgentContainerHandler) checkDACStatus(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) AgentStatusResult {
+	serviceName := h.DACGenerator.GenerateDataAgentContainerServiceName(dac)
+	deploymentName := h.DACGenerator.GenerateDataAgentContainerDeploymentName(dac)
+
+	phase := "Ready"
+	endpoint := fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, dac.Namespace)
+	activeDataDescriptor := h.generateActiveDataDescriptors(dac)
+
+	// 检查service和deployment是不是正常创建了，如果没有创建就设置Phase 为 creating
+	serviceExist := h.checkK8SServiceExist(dac)
+	// 如果service不存在
+	if !serviceExist {
+		phase := "FAILED"
+		return AgentStatusResult{
+			Endpoint: dacv1alpha1.Endpoint{
+				Address:  endpoint,
+				Port:     10100,
+				Protocol: "sse",
+			},
+			ActiveDataDescriptors: activeDataDescriptor,
+			Phase:                 phase,
+			Error:                 fmt.Errorf("service %s not create success.", serviceName),
+		}
+	}
+
+	// 如果deployment不存在
+	deploymentExist := h.checkK8SDeploymentExist(dac)
+	if !deploymentExist {
+		phase := "FAILED"
+		return AgentStatusResult{
+			Endpoint: dacv1alpha1.Endpoint{
+				Address:  endpoint,
+				Port:     10100,
+				Protocol: "sse",
+			},
+			ActiveDataDescriptors: activeDataDescriptor,
+			Phase:                 phase,
+			Error:                 fmt.Errorf("deployment %s not create success.", deploymentName),
+		}
+	}
+
+	// 如果都创建了，就开始call service的地址，检查service是不是健康的，如果不是健康的，就设置Phase 为Starting
+
+	// 如果一切正常的话就返回下面的result, 就设置Phase 为Ready
 	return AgentStatusResult{
 		Endpoint: dacv1alpha1.Endpoint{
-			Address:  "agent-service.default.svc.cluster.local",
-			Port:     8080,
-			Protocol: "http",
+			Address:  endpoint,
+			Port:     10100,
+			Protocol: "sse",
 		},
-		ActiveDataDescriptors: []dacv1alpha1.ActiveDataDescriptor{
-			{
-				Name:       "example-descriptor",
-				Namespace:  "default",
-				LastSynced: time.Now().Format(time.RFC3339),
-			},
-		},
-		Phase: "Ready",
+		ActiveDataDescriptors: activeDataDescriptor,
+		Phase:                 phase,
 	}
+}
+
+// isStatusEqualIgnoringTime compares two DataAgentContainerStatus objects while ignoring time fields
+func (h *DataAgentContainerHandler) isStatusEqualIgnoringTime(oldStatus, newStatus dacv1alpha1.DataAgentContainerStatus) bool {
+	// Compare Endpoint
+	if oldStatus.Endpoint.Address != newStatus.Endpoint.Address ||
+		oldStatus.Endpoint.Port != newStatus.Endpoint.Port ||
+		oldStatus.Endpoint.Protocol != newStatus.Endpoint.Protocol {
+		return false
+	}
+
+	// Compare ActiveDataDescriptors (ignoring LastSynced)
+	if len(oldStatus.ActiveDataDescriptors) != len(newStatus.ActiveDataDescriptors) {
+		return false
+	}
+	for i := range oldStatus.ActiveDataDescriptors {
+		oldDesc := oldStatus.ActiveDataDescriptors[i]
+		newDesc := newStatus.ActiveDataDescriptors[i]
+		if oldDesc.Name != newDesc.Name ||
+			oldDesc.Namespace != newDesc.Namespace {
+			return false
+		}
+	}
+
+	// Compare Conditions (ignoring LastTransitionTime)
+	if len(oldStatus.Conditions) != len(newStatus.Conditions) {
+		return false
+	}
+	for i := range oldStatus.Conditions {
+		oldCond := oldStatus.Conditions[i]
+		newCond := newStatus.Conditions[i]
+		if oldCond.Type != newCond.Type ||
+			oldCond.Status != newCond.Status ||
+			oldCond.Reason != newCond.Reason ||
+			oldCond.Message != newCond.Message {
+			return false
+		}
+	}
+
+	return true
 }
