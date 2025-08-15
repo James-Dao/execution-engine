@@ -81,7 +81,8 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dac
 			OwnerReferences: ownerRefs,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:      corev1.ServiceTypeClusterIP,
+			// Type:      corev1.ServiceTypeClusterIP,
+			Type:      corev1.ServiceTypeNodePort,
 			ClusterIP: corev1.ClusterIPNone,
 			Ports: []corev1.ServicePort{
 				{
@@ -241,11 +242,11 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 					// ImagePullSecrets: imagePullSecrets,
 					Containers: []corev1.Container{
 						{
-							Name:  "orchestrator",
-							Image: orchestratorAgentImage,
-							// ImagePullPolicy: corev1.PullIfNotPresent,
-							ImagePullPolicy: corev1.PullAlways,
-							Args:            orchestratorAgentArgs,
+							Name:            "orchestrator",
+							Image:           orchestratorAgentImage,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							// ImagePullPolicy: corev1.PullAlways,
+							Args: orchestratorAgentArgs,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "orchestrator",
@@ -266,11 +267,11 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 							},
 						},
 						{
-							Name:  "expert",
-							Image: expertAgentImage,
-							// ImagePullPolicy: corev1.PullIfNotPresent,
-							ImagePullPolicy: corev1.PullAlways,
-							Args:            expertAgentArgs,
+							Name:            "expert",
+							Image:           expertAgentImage,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							// ImagePullPolicy: corev1.PullAlways,
+							Args: expertAgentArgs,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "expert",
