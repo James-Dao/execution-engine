@@ -82,8 +82,8 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerService(dac *dac
 		},
 		Spec: corev1.ServiceSpec{
 			// Type:      corev1.ServiceTypeClusterIP,
-			Type:      corev1.ServiceTypeNodePort,
-			ClusterIP: corev1.ClusterIPNone,
+			// ClusterIP: corev1.ClusterIPNone,
+			Type: corev1.ServiceTypeNodePort,
 			Ports: []corev1.ServicePort{
 				{
 					Port:       10100,
@@ -147,7 +147,7 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1al
 
 func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
 	port := "10100"
-	redisHost := "redis-server"
+	redisHost := "redis-server.dac.svc.cluster.local"
 	redisPort := "6379"
 	redisDB := "0"
 	password := "123"
@@ -169,7 +169,7 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1al
 
 func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
 	port := "10101"
-	redisHost := "redis-server"
+	redisHost := "redis-server.dac.svc.cluster.local"
 	redisPort := "6379"
 	redisDB := "1"
 	password := "123"
