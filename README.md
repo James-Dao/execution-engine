@@ -103,3 +103,10 @@ export API_RETRY_DELAY="500ms"     # 500毫秒
 
 
 
+# 维护
+
+
+kubectl delete pod execution-engine-controller-manager-6ff889ccc9-mlbgg  -n execution-engine-system --grace-period=0 --force
+
+
+

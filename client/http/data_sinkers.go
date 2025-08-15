@@ -14,7 +14,7 @@ import (
 
 // 配置常量（可从环境变量覆盖）
 const (
-	defaultBaseURL     = "http://10.64.0.74:20030"
+	defaultBaseURL     = "http://celery-httpserver.dac.svc.cluster.local:8000"
 	defaultHTTPTimeout = 30 * time.Second
 	defaultMaxRetries  = 3
 	defaultRetryDelay  = 1 * time.Second
