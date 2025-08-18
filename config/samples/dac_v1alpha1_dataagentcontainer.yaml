@@ -11,7 +11,7 @@ spec:
     selector:
       sourceNameSelector: ["dd-0"]
   agentCard:
-    name: "Coder Agent"
+    name: "CoderAgent"
     description: "help user with writing code according to requirements"
     url: "http://192.168.3.25:20003/"
     skills:
