@@ -30,6 +30,7 @@ spec:
     #     tables: ["test_data"]
     #     limit: 1000
     #     query: "SELECT * FROM test_data limit 10"
+    #     batchSize: 1000
     #   authenticationRef:
     #     name: auth-secret
     #   processing:
