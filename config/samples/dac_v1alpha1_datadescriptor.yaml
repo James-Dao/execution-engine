@@ -7,10 +7,7 @@ type: Opaque
 data:
   username: YWRtaW4=
   password: YWRtaW4=
-
 ---
-
-
 apiVersion: dac.dac.io/v1alpha1
 kind: DataDescriptor
 metadata:
@@ -31,6 +28,7 @@ spec:
     #     database: "vectorsdk"
     #   extract:
     #     tables: ["test_data"]
+    #     limit: 1000
     #     query: "SELECT * FROM test_data limit 10"
     #     batchSize: 1000
     #   authenticationRef:
