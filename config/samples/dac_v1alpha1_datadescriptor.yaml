@@ -24,11 +24,14 @@ spec:
     # - type: mysql
     #   name: "mysql-production"
     #   metadata:
-    #     address: "localhost:3306"
-    #     database: "data0"
+    #     host: "localhost"
+    #     port: "3306"
+    #     user: "root"
+    #     password: "123"
+    #     database: "vectorsdk"
     #   extract:
-    #     tables: ["users", "products"]
-    #     query: "SELECT * FROM logs WHERE created_at > '2023-01-01'"
+    #     tables: ["test_data"]
+    #     query: "SELECT * FROM test_data limit 10"
     #     batchSize: 1000
     #   authenticationRef:
     #     name: auth-secret
