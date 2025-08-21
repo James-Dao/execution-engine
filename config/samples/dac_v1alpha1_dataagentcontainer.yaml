@@ -23,6 +23,5 @@ spec:
         examples:
           - "python , java ,golang"
   model:
-    provider: "aliyun"
-    llm: "qwen2-7b"
-    embedding: "bge-m3"
+    llm: "llm-config"
+    embedding: "embedding-config"

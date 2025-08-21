@@ -48,7 +48,6 @@ type AgentSkill struct {
 
 // ModelSpec defines the LLM and embedding models to use
 type ModelSpec struct {
-	Provider  string `json:"provider"`
 	LLM       string `json:"llm"`
 	Embedding string `json:"embedding"`
 }

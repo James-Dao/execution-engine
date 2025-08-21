@@ -23,6 +23,14 @@ type DataAgentContainerGenerator struct {
 	Logger      logr.Logger
 }
 
+// LLMConfig
+type LLMConfig struct {
+	Provider string
+	APIKey   string
+	BaseURL  string
+	Model    string
+}
+
 func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) error {
 	logger := h.Logger.WithValues("namespace", dac.Namespace, "name", dac.Name)
 	logger.Info("Generate DataAgentContainer K8S resources")
@@ -54,7 +62,11 @@ func (h *DataAgentContainerGenerator) Do(ctx context.Context, dac *dacv1alpha1.D
 		}
 	}
 
-	deployment := h.GenerateDataAgentContainerDeployment(dac, labels, ownerRefs)
+	deployment, err := h.GenerateDataAgentContainerDeployment(ctx, dac, labels, ownerRefs)
+	if err != nil {
+		return err
+	}
+
 	deploymentName := h.GenerateDataAgentContainerDeploymentName(dac)
 	if _, err := h.K8sServices.GetDeployment(dac.Namespace, deploymentName); err != nil {
 		// If no resource we need to create.
@@ -145,18 +157,30 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentEnvs(dac *dacv1al
 	return envs
 }
 
-func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
+// getLLMConfig get data from configmap
+func (h *DataAgentContainerGenerator) getLLMConfig(ctx context.Context, dac *dacv1alpha1.DataAgentContainer) (*LLMConfig, error) {
+	configMap := &corev1.ConfigMap{}
+
+	err := h.Kubeclient.Get(ctx, client.ObjectKey{Name: dac.Spec.Model.LLM, Namespace: dac.Namespace}, configMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ConfigMap: %v", err)
+	}
+
+	return &LLMConfig{
+		Provider: configMap.Data["provider"],
+		APIKey:   configMap.Data["api-key"],
+		BaseURL:  configMap.Data["base-url"],
+		Model:    configMap.Data["model"],
+	}, nil
+}
+
+func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1alpha1.DataAgentContainer, llmConfig *LLMConfig) []string {
 	port := "10100"
 	redisHost := "redis-server.dac.svc.cluster.local"
 	redisPort := "6379"
 	redisDB := "0"
 	password := "123"
 
-	provider := "openai_compatible"
-	apiKey := "sk-1fc78dda9b844079b7e25bb466440546"
-	baseUrl := "https://dashscope.aliyuncs.com/compatible-mode/v1"
-	model := "qwen2.5-72b-instruct"
-
 	cmds := []string{
 		"--port",
 		port,
@@ -169,29 +193,24 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1al
 		"--password",
 		password,
 		"--provider",
-		provider,
+		llmConfig.Provider,
 		"--api-key",
-		apiKey,
+		llmConfig.APIKey,
 		"--base-url",
-		baseUrl,
+		llmConfig.BaseURL,
 		"--model",
-		model,
+		llmConfig.Model,
 	}
 	return cmds
 }
 
-func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.DataAgentContainer) []string {
+func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.DataAgentContainer, llmConfig *LLMConfig) []string {
 	port := "10101"
 	redisHost := "redis-server.dac.svc.cluster.local"
 	redisPort := "6379"
 	redisDB := "1"
 	password := "123"
 
-	provider := "openai_compatible"
-	apiKey := "sk-1fc78dda9b844079b7e25bb466440546"
-	baseUrl := "https://dashscope.aliyuncs.com/compatible-mode/v1"
-	model := "qwen2.5-72b-instruct"
-
 	cmds := []string{
 		"--port",
 		port,
@@ -204,13 +223,13 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 		"--password",
 		password,
 		"--provider",
-		provider,
+		llmConfig.Provider,
 		"--api-key",
-		apiKey,
+		llmConfig.APIKey,
 		"--base-url",
-		baseUrl,
+		llmConfig.BaseURL,
 		"--model",
-		model,
+		llmConfig.Model,
 	}
 	return cmds
 }
@@ -220,7 +239,7 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeploymentName(d
 	return deploymentName
 }
 
-func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) *appsv1.Deployment {
+func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(ctx context.Context, dac *dacv1alpha1.DataAgentContainer, labels map[string]string, ownerRefs []metav1.OwnerReference) (*appsv1.Deployment, error) {
 
 	orchestratorAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/orchestrator-agent:v0.0.1-amd64"
 	expertAgentImage := "registry.cn-shanghai.aliyuncs.com/jamesxiong/expert-agent:v0.0.1-amd64"
@@ -231,9 +250,15 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 
 	replicas := int32(1)
 
-	orchestratorAgentArgs := h.generateOrchestratorAgentArgs(dac)
+	llmConfig, err := h.getLLMConfig(ctx, dac)
 
-	expertAgentArgs := h.generateExpertAgentArgs(dac)
+	if err != nil {
+		return nil, err
+	}
+
+	orchestratorAgentArgs := h.generateOrchestratorAgentArgs(dac, llmConfig)
+
+	expertAgentArgs := h.generateExpertAgentArgs(dac, llmConfig)
 
 	// todo handle private image PullSecrets
 	// var imagePullSecrets []corev1.LocalObjectReference
@@ -322,5 +347,5 @@ func (h *DataAgentContainerGenerator) GenerateDataAgentContainerDeployment(dac *
 			},
 		},
 	}
-	return deployment
+	return deployment, nil
 }

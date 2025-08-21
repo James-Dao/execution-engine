@@ -95,12 +95,9 @@ spec:
                     type: string
                   llm:
                     type: string
-                  provider:
-                    type: string
                 required:
                 - embedding
                 - llm
-                - provider
                 type: object
             required:
             - agentCard

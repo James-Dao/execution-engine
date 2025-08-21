@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-config
+  namespace: dac
+data:
+  provider: "openai_compatible"
+  api-key: "sk-xxx"
+  base-url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "qwen2.5-72b-instruct"
