@@ -152,6 +152,11 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1al
 	redisDB := "0"
 	password := "123"
 
+	provider := "openai_compatible"
+	apiKey := "sk-1fc78dda9b844079b7e25bb466440546"
+	baseUrl := "https://dashscope.aliyuncs.com/compatible-mode/v1"
+	model := "qwen2.5-72b-instruct"
+
 	cmds := []string{
 		"--port",
 		port,
@@ -163,6 +168,14 @@ func (h *DataAgentContainerGenerator) generateOrchestratorAgentArgs(dac *dacv1al
 		redisDB,
 		"--password",
 		password,
+		"--provider",
+		provider,
+		"--api-key",
+		apiKey,
+		"--base-url",
+		baseUrl,
+		"--model",
+		model,
 	}
 	return cmds
 }
@@ -174,6 +187,11 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 	redisDB := "1"
 	password := "123"
 
+	provider := "openai_compatible"
+	apiKey := "sk-1fc78dda9b844079b7e25bb466440546"
+	baseUrl := "https://dashscope.aliyuncs.com/compatible-mode/v1"
+	model := "qwen2.5-72b-instruct"
+
 	cmds := []string{
 		"--port",
 		port,
@@ -185,6 +203,14 @@ func (h *DataAgentContainerGenerator) generateExpertAgentArgs(dac *dacv1alpha1.D
 		redisDB,
 		"--password",
 		password,
+		"--provider",
+		provider,
+		"--api-key",
+		apiKey,
+		"--base-url",
+		baseUrl,
+		"--model",
+		model,
 	}
 	return cmds
 }
