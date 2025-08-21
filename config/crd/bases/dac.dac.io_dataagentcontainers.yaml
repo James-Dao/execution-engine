@@ -128,10 +128,6 @@ spec:
                 items:
                   description: Condition saves the state information of the cr
                   properties:
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another.
-                      type: string
                     lastUpdateTime:
                       description: The last time this condition was updated.
                       type: string

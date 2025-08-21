@@ -233,7 +233,7 @@ func (h *DataDescriptorHandler) isStatusEqualIgnoringTime(oldStatus, newStatus d
 		return false
 	}
 
-	// Compare Conditions (ignoring LastTransitionTime)
+	// Compare Conditions
 	if len(oldStatus.Conditions) != len(newStatus.Conditions) {
 		return false
 	}

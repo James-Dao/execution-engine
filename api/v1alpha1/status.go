@@ -30,8 +30,6 @@ type Condition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// The last time this condition was updated.
 	LastUpdateTime string `json:"lastUpdateTime,omitempty"`
-	// Last time the condition transitioned from one status to another.
-	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 	// The reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 	// A human readable message indicating details about the transition.
@@ -42,12 +40,11 @@ func NewCondition(condType ConditionType, status corev1.ConditionStatus, reason,
 	now := time.Now()
 	nowString := now.Format(time.RFC3339)
 	return &Condition{
-		Type:               condType,
-		Status:             status,
-		LastUpdateTime:     nowString,
-		LastTransitionTime: nowString,
-		Reason:             reason,
-		Message:            message,
+		Type:           condType,
+		Status:         status,
+		LastUpdateTime: nowString,
+		Reason:         reason,
+		Message:        message,
 	}
 }
 

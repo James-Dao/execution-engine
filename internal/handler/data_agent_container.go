@@ -282,7 +282,7 @@ func (h *DataAgentContainerHandler) isStatusEqualIgnoringTime(oldStatus, newStat
 		}
 	}
 
-	// Compare Conditions (ignoring LastTransitionTime)
+	// Compare Conditions
 	if len(oldStatus.Conditions) != len(newStatus.Conditions) {
 		return false
 	}
